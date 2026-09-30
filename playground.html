@@ -1,0 +1,1774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>EyeKeeper — Playground</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:     #060810;
+  --bg2:    #0c1120;
+  --bg3:    #111827;
+  --border: rgba(255,255,255,0.07);
+  --bord2:  rgba(255,255,255,0.13);
+  --text:   #e2e8f0;
+  --muted:  #64748b;
+  --accent: #00e5a0;
+  --acc2:   #3b82f6;
+  --danger: #ef4444;
+  --target: #f97316;
+  --fd: 'Syne', sans-serif;
+  --fb: 'DM Sans', sans-serif;
+  --fm: 'JetBrains Mono', monospace;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--fb); overflow: hidden; }
+
+/* ── Layout ── */
+.app { display: flex; height: 100vh; }
+
+/* ── Sidebar ── */
+.sidebar {
+  width: 300px; min-width: 300px; background: var(--bg2);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; overflow-y: auto; flex-shrink: 0;
+}
+.sb-logo {
+  padding: 18px 16px 14px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+}
+.logo-mark {
+  width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--accent), var(--acc2));
+  display: grid; place-items: center; font-size: 16px;
+}
+.logo-name { font-family: var(--fd); font-weight: 800; font-size: 17px; }
+.logo-name span { color: var(--accent); }
+
+.sb-section { padding: 14px 14px 0; }
+.sb-section:last-of-type { padding-bottom: 14px; }
+.sb-label {
+  font-family: var(--fm); font-size: 10px; color: var(--muted);
+  letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px;
+}
+.divider { height: 1px; background: var(--border); margin: 4px 0; }
+
+/* Mode tabs */
+.mode-tabs { display: flex; gap: 3px; background: var(--bg); border-radius: 8px; padding: 3px; }
+.mode-tab {
+  flex: 1; padding: 7px 4px; border: none; background: transparent;
+  color: var(--muted); font-family: var(--fb); font-size: 12px; font-weight: 500;
+  border-radius: 6px; cursor: pointer; transition: all .15s;
+  display: flex; align-items: center; justify-content: center; gap: 4px;
+}
+.mode-tab:hover { color: var(--text); }
+.mode-tab.active { background: var(--bg3); color: var(--text); box-shadow: 0 1px 4px rgba(0,0,0,.4); }
+
+/* Face upload */
+.face-zone {
+  border: 2px dashed var(--bord2); border-radius: 8px; padding: 12px;
+  cursor: pointer; transition: all .2s; position: relative; text-align: center;
+  background: var(--bg);
+}
+.face-zone:hover { border-color: var(--target); background: rgba(249,115,22,.04); }
+.face-zone.loaded { border-color: rgba(249,115,22,.5); border-style: solid; background: rgba(249,115,22,.05); }
+.face-zone input { display: none; }
+.face-placeholder { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.face-ph-icon { font-size: 28px; opacity: .4; }
+.face-ph-text { font-size: 12px; color: var(--muted); }
+.face-loaded-row { display: flex; align-items: center; gap: 10px; }
+.face-thumb { width: 48px; height: 48px; object-fit: cover; border-radius: 6px; border: 2px solid var(--target); flex-shrink: 0; }
+.face-loaded-info { flex: 1; min-width: 0; text-align: left; }
+.face-loaded-name { font-family: var(--fd); font-size: 12px; font-weight: 700; color: var(--target); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.face-loaded-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.face-clear { position: absolute; top: 6px; right: 6px; background: var(--danger); border: none; border-radius: 4px; padding: 2px 7px; color: #fff; font-size: 10px; cursor: pointer; }
+.face-name-input {
+  width: 100%; margin-top: 7px; background: var(--bg); border: 1px solid var(--bord2);
+  border-radius: 6px; padding: 7px 10px; color: var(--text);
+  font-family: var(--fb); font-size: 12px; outline: none;
+}
+.face-name-input:focus { border-color: var(--target); }
+.backend-badge {
+  display: inline-flex; align-items: center; gap: 5px; margin-top: 6px;
+  padding: 3px 9px; border-radius: 5px; font-family: var(--fm); font-size: 10px;
+}
+.backend-badge.deepface { background: rgba(0,229,160,.1); border: 1px solid var(--accent); color: var(--accent); }
+.backend-badge.opencv   { background: rgba(59,130,246,.1); border: 1px solid var(--acc2);  color: var(--acc2); }
+.backend-badge.none     { background: rgba(100,116,139,.1); border: 1px solid var(--border); color: var(--muted); }
+
+/* Prompt */
+.prompt-row { display: flex; gap: 6px; margin-bottom: 8px; }
+.prompt-input {
+  flex: 1; background: var(--bg); border: 1px solid var(--bord2);
+  border-radius: 7px; padding: 8px 11px; color: var(--text);
+  font-family: var(--fb); font-size: 13px; outline: none; transition: border-color .15s;
+}
+.prompt-input:focus { border-color: var(--accent); }
+.prompt-input::placeholder { color: var(--muted); }
+.add-btn {
+  width: 36px; height: 36px; background: var(--accent); border: none;
+  border-radius: 7px; color: #000; font-size: 20px; font-weight: 700;
+  cursor: pointer; display: grid; place-items: center; flex-shrink: 0; transition: opacity .15s;
+}
+.add-btn:hover { opacity: .85; }
+.tags-wrap { display: flex; flex-wrap: wrap; gap: 5px; min-height: 10px; margin-bottom: 6px; }
+.tag {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 9px; border-radius: 100px; font-size: 11px; font-weight: 600; color: #000;
+}
+.tag-x { cursor: pointer; opacity: .7; font-size: 10px; }
+.tag-x:hover { opacity: 1; }
+
+/* Quick prompts */
+.quick-grid { display: flex; flex-direction: column; gap: 4px; }
+.quick-btn {
+  display: flex; align-items: center; gap: 8px; padding: 7px 10px;
+  background: var(--bg); border: 1px solid var(--border); border-radius: 7px;
+  color: var(--muted); font-family: var(--fb); font-size: 12px;
+  cursor: pointer; text-align: left; transition: all .15s; width: 100%;
+}
+.quick-btn:hover { border-color: var(--accent); color: var(--text); background: rgba(0,229,160,.04); }
+
+/* Toggles */
+.toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 4px 0; }
+.toggle-label { font-size: 12px; color: var(--muted); }
+.toggle-sw { position: relative; width: 34px; height: 19px; cursor: pointer; flex-shrink: 0; }
+.toggle-sw input { opacity: 0; width: 0; height: 0; position: absolute; }
+.t-track { position: absolute; inset: 0; background: var(--bg); border: 1px solid var(--bord2); border-radius: 10px; transition: all .2s; }
+.toggle-sw input:checked + .t-track { background: var(--accent); border-color: var(--accent); }
+.t-knob { position: absolute; top: 3px; left: 3px; width: 13px; height: 13px; border-radius: 50%; background: var(--muted); transition: transform .2s, background .2s; pointer-events: none; }
+.toggle-sw input:checked ~ .t-knob { transform: translateX(15px); background: #000; }
+
+/* Sliders */
+.slider-group { display: flex; flex-direction: column; gap: 10px; }
+.slider-row { display: flex; flex-direction: column; gap: 4px; }
+.slider-label { font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; }
+.slider-label span { color: var(--text); font-family: var(--fm); font-size: 11px; }
+input[type=range] { width: 100%; accent-color: var(--accent); height: 3px; cursor: pointer; }
+
+/* ── USER PROFILE WIDGET ── */
+.user-widget {
+  margin: 0 14px 0; padding: 10px 12px;
+  background: var(--bg); border: 1px solid var(--bord2); border-radius: 10px;
+}
+.user-widget-top { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
+.user-avatar {
+  width: 28px; height: 28px; border-radius: 7px; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--accent), var(--acc2));
+  display: grid; place-items: center; font-size: 12px; font-weight: 700; color: #000;
+}
+.user-email {
+  flex: 1; min-width: 0; font-family: var(--fm); font-size: 10px;
+  color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.plan-pill {
+  padding: 2px 8px; border-radius: 100px; font-family: var(--fm); font-size: 9px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .5px;
+}
+.plan-pill.free       { background: rgba(100,116,139,.15); color: var(--muted); border: 1px solid var(--border); }
+.plan-pill.starter    { background: rgba(0,229,160,.12);   color: var(--accent); border: 1px solid rgba(0,229,160,.3); }
+.plan-pill.pro        { background: rgba(59,130,246,.12);  color: var(--acc2);   border: 1px solid rgba(59,130,246,.3); }
+.plan-pill.enterprise { background: rgba(249,115,22,.12);  color: var(--target); border: 1px solid rgba(249,115,22,.3); }
+.user-widget-btns { display: flex; gap: 5px; }
+.upgrade-btn {
+  flex: 1; padding: 5px 8px; background: var(--accent); border: none;
+  border-radius: 6px; color: #000; font-family: var(--fb); font-size: 11px;
+  font-weight: 700; cursor: pointer; transition: opacity .15s; text-align: center;
+}
+.upgrade-btn:hover { opacity: .85; }
+.logout-btn {
+  padding: 5px 10px; background: transparent; border: 1px solid var(--bord2);
+  border-radius: 6px; color: var(--muted); font-family: var(--fb); font-size: 11px;
+  cursor: pointer; transition: all .15s;
+}
+.logout-btn:hover { border-color: var(--danger); color: var(--danger); }
+
+/* Upgrade modal */
+#upgradeModal {
+  position: fixed; inset: 0; background: rgba(0,0,0,.85); z-index: 9000;
+  display: none; align-items: center; justify-content: center; padding: 20px;
+}
+#upgradeModal.open { display: flex; }
+.upgrade-modal-box {
+  background: var(--bg2); border: 1px solid var(--bord2); border-radius: 18px;
+  padding: 32px; max-width: 680px; width: 100%;
+  box-shadow: 0 40px 100px rgba(0,0,0,.7); position: relative;
+}
+.upgrade-modal-box h2 {
+  font-family: var(--fd); font-size: 24px; font-weight: 800;
+  letter-spacing: -1px; margin-bottom: 6px;
+}
+.upgrade-modal-box .sub { color: var(--muted); font-size: 13px; margin-bottom: 24px; }
+.plan-cards { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
+.plan-card {
+  background: var(--bg3); border: 1px solid var(--border); border-radius: 12px;
+  padding: 20px 16px; cursor: pointer; transition: all .2s; position: relative;
+}
+.plan-card:hover { border-color: var(--accent); transform: translateY(-3px); }
+.plan-card.highlighted { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 0 30px rgba(0,229,160,.12); }
+.plan-label { font-family: var(--fm); font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px; }
+.plan-name  { font-family: var(--fd); font-size: 18px; font-weight: 800; margin-bottom: 4px; }
+.plan-price { font-family: var(--fd); font-size: 28px; font-weight: 800; color: var(--accent); letter-spacing: -1px; line-height: 1; }
+.plan-price span { font-size: 13px; color: var(--muted); font-family: var(--fb); font-weight: 400; }
+.plan-features { list-style: none; margin-top: 14px; display: flex; flex-direction: column; gap: 5px; }
+.plan-features li { font-size: 11px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.plan-features li::before { content: '✓'; color: var(--accent); font-weight: 700; flex-shrink: 0; }
+.plan-select-btn {
+  width: 100%; margin-top: 16px; padding: 9px;
+  background: var(--accent); border: none; border-radius: 8px; color: #000;
+  font-family: var(--fb); font-size: 13px; font-weight: 700; cursor: pointer;
+  transition: opacity .15s;
+}
+.plan-select-btn:hover { opacity: .85; }
+.modal-close {
+  position: absolute; top: 14px; right: 16px;
+  background: none; border: none; color: var(--muted); font-size: 24px; cursor: pointer;
+}
+.modal-close:hover { color: var(--text); }
+@media(max-width:600px) { .plan-cards { grid-template-columns: 1fr; } }
+
+/* Detect button */
+.detect-btn {
+  margin: 10px 14px 14px; padding: 12px; background: var(--accent);
+  border: none; border-radius: 9px; color: #000; font-family: var(--fd);
+  font-size: 14px; font-weight: 700; cursor: pointer; transition: all .2s;
+  box-shadow: 0 0 24px rgba(0,229,160,.2);
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+}
+.detect-btn:hover:not(:disabled) { box-shadow: 0 0 40px rgba(0,229,160,.4); transform: translateY(-1px); }
+.detect-btn:disabled { opacity: .35; cursor: not-allowed; transform: none; }
+
+/* ── Main ── */
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+
+/* Top tabs */
+.top-tabs {
+  display: flex; background: var(--bg2); border-bottom: 1px solid var(--border);
+  flex-shrink: 0; padding: 0 4px;
+}
+.top-tab {
+  padding: 10px 18px; background: transparent; border: none;
+  border-bottom: 2px solid transparent; color: var(--muted);
+  font-family: var(--fb); font-size: 13px; font-weight: 500;
+  cursor: pointer; transition: all .15s; white-space: nowrap;
+}
+.top-tab:hover { color: var(--text); }
+.top-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.top-tab.target-tab.active { color: var(--target); border-bottom-color: var(--target); }
+.tab-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--danger); color: #fff; border-radius: 9px;
+  font-size: 9px; font-family: var(--fm); padding: 1px 5px; margin-left: 4px;
+  display: none;
+}
+.tab-badge.vis { display: inline-flex; }
+
+/* Status bar */
+.status-bar {
+  padding: 9px 16px; background: var(--bg2); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+}
+.status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex-shrink: 0; transition: background .3s; }
+.status-dot.active { background: var(--accent); animation: blink 1s ease infinite; }
+.status-dot.live   { background: var(--danger);  animation: blink .8s ease infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.4} }
+.status-text { font-size: 12px; color: var(--muted); flex: 1; font-family: var(--fm); }
+.status-badge {
+  background: var(--bg3); border: 1px solid var(--bord2);
+  border-radius: 5px; padding: 2px 9px; font-family: var(--fm); font-size: 11px; color: var(--accent);
+  display: none;
+}
+.target-badge {
+  background: rgba(249,115,22,.15); border: 1px solid var(--target);
+  border-radius: 5px; padding: 2px 9px; font-family: var(--fm); font-size: 11px; color: var(--target);
+  cursor: pointer; display: none;
+}
+.target-badge.vis { display: inline-flex; }
+
+/* View panels */
+.view-panel { display: none; flex: 1; flex-direction: column; overflow: hidden; min-height: 0; }
+.view-panel.active { display: flex; }
+
+/* Canvas area */
+.canvas-area {
+  flex: 1; position: relative; overflow: hidden; background: #000;
+  display: flex; align-items: center; justify-content: center;
+}
+.upload-zone {
+  position: absolute; inset: 16px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+  border: 2px dashed var(--bord2); border-radius: 12px; cursor: pointer; transition: all .2s; z-index: 5;
+}
+.upload-zone.drag-over { border-color: var(--accent); background: rgba(0,229,160,.04); }
+.upload-zone.hidden    { display: none !important; }
+.upload-icon  { font-size: 48px; line-height: 1; }
+.upload-title { font-family: var(--fd); font-size: 18px; font-weight: 700; }
+.upload-sub   { font-size: 13px; color: var(--muted); }
+.upload-fmts  { font-family: var(--fm); font-size: 11px; color: var(--muted); }
+.browse-btn {
+  padding: 8px 22px; background: transparent; border: 1px solid var(--bord2);
+  border-radius: 7px; color: var(--text); font-size: 13px; cursor: pointer; transition: all .15s;
+}
+.browse-btn:hover { border-color: var(--accent); color: var(--accent); }
+#mainCanvas { position: absolute; display: none; }
+#streamBox  { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; background: #000; }
+#streamImg  { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
+.hud { position: absolute; top: 10px; left: 12px; z-index: 20; font-family: var(--fm); font-size: 10px; color: var(--accent); line-height: 1.9; pointer-events: none; display: none; }
+
+/* Results panel */
+.results-panel { flex-shrink: 0; max-height: 120px; overflow-y: auto; background: var(--bg2); border-top: 1px solid var(--border); display: none; }
+.results-title { padding: 8px 14px 4px; font-family: var(--fm); font-size: 10px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+.results-list  { display: flex; flex-wrap: wrap; gap: 5px; padding: 0 14px 10px; }
+.result-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 9px; border-radius: 100px; font-size: 11px; font-family: var(--fm); font-weight: 500; color: #000;
+}
+.result-chip.is-target { background: var(--target) !important; color: #fff; box-shadow: 0 0 10px rgba(249,115,22,.4); }
+.rconf { opacity: .65; }
+
+/* ── Gallery panel ── */
+.gallery-panel { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+.gallery-toolbar {
+  flex-shrink: 0; padding: 10px 14px; background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.gal-filter-wrap { display: flex; gap: 2px; background: var(--bg); border-radius: 7px; padding: 3px; }
+.gal-filter-btn {
+  padding: 4px 12px; border: none; background: transparent;
+  color: var(--muted); font-family: var(--fb); font-size: 11px; font-weight: 500;
+  border-radius: 5px; cursor: pointer; transition: all .15s;
+}
+.gal-filter-btn.active { background: var(--bg3); color: var(--text); }
+.gal-search {
+  flex: 1; min-width: 100px; background: var(--bg); border: 1px solid var(--bord2);
+  border-radius: 7px; padding: 6px 10px; color: var(--text);
+  font-family: var(--fb); font-size: 12px; outline: none;
+}
+.gal-search:focus { border-color: var(--accent); }
+.gal-refresh {
+  padding: 6px 12px; background: transparent; border: 1px solid var(--bord2);
+  border-radius: 7px; color: var(--muted); font-family: var(--fb); font-size: 12px; cursor: pointer;
+  transition: all .15s;
+}
+.gal-refresh:hover { border-color: var(--accent); color: var(--accent); }
+.gal-count { font-family: var(--fm); font-size: 11px; color: var(--muted); }
+.gallery-grid-wrap { flex: 1; overflow-y: auto; padding: 12px; }
+.gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(178px, 1fr)); gap: 8px; }
+.gallery-empty { text-align: center; padding: 60px 20px; color: var(--muted); }
+.gallery-empty-icon { font-size: 40px; margin-bottom: 8px; opacity: .4; }
+.gallery-empty-text { font-size: 13px; font-family: var(--fm); }
+.ss-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 9px; overflow: hidden; cursor: pointer;
+  transition: all .2s; position: relative;
+}
+.ss-card:hover { border-color: var(--bord2); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,.4); }
+.ss-card.is-target { border-color: rgba(249,115,22,.4); }
+.ss-thumb { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; background: #000; }
+.ss-tag {
+  position: absolute; top: 6px; left: 6px;
+  padding: 2px 7px; border-radius: 4px; font-family: var(--fm); font-size: 9px; font-weight: 700;
+}
+.ss-tag.target { background: var(--target); color: #fff; }
+.ss-tag.person { background: var(--accent); color: #000; }
+.ss-tag.crop   { background: var(--acc2); color: #fff; }
+.ss-del {
+  position: absolute; top: 6px; right: 6px;
+  background: rgba(15,20,40,.8); border: none; border-radius: 4px;
+  padding: 3px 6px; color: var(--muted); font-size: 11px; cursor: pointer;
+  opacity: 0; transition: opacity .15s;
+}
+.ss-card:hover .ss-del { opacity: 1; }
+.ss-del:hover { color: var(--danger); }
+.ss-info { padding: 7px 9px; }
+.ss-name { font-family: var(--fm); font-size: 9px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ss-name.is-target { color: var(--target); }
+.ss-meta { font-size: 9px; color: var(--muted); opacity: .6; margin-top: 1px; }
+
+/* ── Log panel ── */
+.log-panel { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+.log-toolbar {
+  flex-shrink: 0; padding: 10px 14px; background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+}
+.log-targets-label { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); cursor: pointer; }
+.log-targets-label input { accent-color: var(--target); }
+.log-clear-btn {
+  margin-left: auto; padding: 5px 12px; background: transparent;
+  border: 1px solid var(--bord2); border-radius: 6px;
+  color: var(--muted); font-size: 12px; cursor: pointer; transition: all .15s;
+}
+.log-clear-btn:hover { border-color: var(--danger); color: var(--danger); }
+.log-body { flex: 1; overflow-y: auto; }
+table.log-table { width: 100%; border-collapse: collapse; }
+.log-table th {
+  padding: 8px 12px; text-align: left; position: sticky; top: 0;
+  background: var(--bg2); border-bottom: 1px solid var(--border);
+  font-family: var(--fm); font-size: 9px; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase;
+}
+.log-table td { padding: 7px 12px; border-bottom: 1px solid var(--border); font-family: var(--fm); font-size: 11px; color: var(--muted); }
+.log-table tr:hover td { background: rgba(255,255,255,.02); }
+.log-table tr.is-target td { color: var(--target); }
+.log-badge { padding: 2px 7px; border-radius: 4px; font-size: 9px; font-weight: 700; }
+.log-badge.target { background: var(--target); color: #fff; }
+.log-badge.person { background: rgba(0,229,160,.12); border: 1px solid var(--accent); color: var(--accent); }
+.score-wrap { display: inline-flex; align-items: center; gap: 5px; }
+.score-bar { width: 36px; height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.score-fill { height: 100%; border-radius: 2px; background: var(--accent); }
+.score-fill.match { background: var(--target); }
+.log-empty { text-align: center; padding: 50px 20px; font-family: var(--fm); font-size: 12px; color: var(--muted); display: none; }
+
+/* ── Lightbox ── */
+#lightbox {
+  position: fixed; inset: 0; background: rgba(0,0,0,.92); z-index: 9997;
+  display: none; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+}
+#lightbox.open { display: flex; }
+#lbImg { max-width: 92vw; max-height: 82vh; border-radius: 8px; border: 1px solid var(--bord2); }
+#lbName { font-family: var(--fm); font-size: 11px; color: var(--muted); }
+#lbClose { position: absolute; top: 14px; right: 18px; background: none; border: none; color: var(--muted); font-size: 30px; cursor: pointer; }
+#lbClose:hover { color: var(--text); }
+#lbDl { padding: 7px 22px; background: var(--accent); border: none; border-radius: 7px; color: #000; font-weight: 700; font-size: 13px; cursor: pointer; }
+
+/* Toast */
+.toast {
+  position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%) translateY(16px);
+  background: var(--bg3); border: 1px solid var(--bord2); border-radius: 8px;
+  padding: 9px 18px; font-size: 13px; font-family: var(--fm); color: var(--text);
+  opacity: 0; transition: all .22s; pointer-events: none; z-index: 999; white-space: nowrap;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--bord2); border-radius: 2px; }
+
+/* ── CCTV Section ── */
+.cctv-section { display: none; }
+.cctv-section.visible { display: block; }
+.cctv-brand-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-bottom: 8px; }
+.brand-chip {
+  padding: 5px 6px; background: var(--bg); border: 1px solid var(--border);
+  border-radius: 6px; color: var(--muted); font-size: 10px; font-family: var(--fm);
+  cursor: pointer; text-align: center; transition: all .15s; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.brand-chip:hover  { border-color: var(--acc2); color: var(--text); }
+.brand-chip.active { border-color: var(--acc2); color: var(--acc2); background: rgba(59,130,246,.08); }
+.cctv-field { margin-bottom: 7px; }
+.cctv-field label { display: block; font-size: 10px; color: var(--muted); font-family: var(--fm); margin-bottom: 3px; letter-spacing: .5px; }
+.cctv-input {
+  width: 100%; background: var(--bg); border: 1px solid var(--bord2);
+  border-radius: 6px; padding: 7px 10px; color: var(--text);
+  font-family: var(--fm); font-size: 11px; outline: none; transition: border-color .15s;
+}
+.cctv-input:focus { border-color: var(--acc2); }
+.cctv-input::placeholder { color: var(--muted); opacity: .6; }
+.cctv-row { display: flex; gap: 5px; }
+.cctv-row .cctv-input { flex: 1; }
+.cctv-url-box {
+  width: 100%; background: rgba(59,130,246,.05); border: 1px solid rgba(59,130,246,.2);
+  border-radius: 6px; padding: 7px 10px; color: var(--acc2);
+  font-family: var(--fm); font-size: 10px; outline: none; transition: border-color .15s;
+  word-break: break-all; min-height: 34px; cursor: text;
+}
+.cctv-url-box:focus { border-color: var(--acc2); }
+.scan-btn {
+  width: 100%; margin-bottom: 7px; padding: 8px; background: transparent;
+  border: 1px solid var(--bord2); border-radius: 7px; color: var(--muted);
+  font-family: var(--fb); font-size: 12px; cursor: pointer; transition: all .15s;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.scan-btn:hover:not(:disabled) { border-color: var(--acc2); color: var(--acc2); background: rgba(59,130,246,.05); }
+.scan-btn:disabled { opacity: .4; cursor: not-allowed; }
+.scan-results {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 7px; overflow: hidden; margin-bottom: 7px; display: none;
+}
+.scan-results.visible { display: block; }
+.scan-results-header {
+  padding: 6px 10px; border-bottom: 1px solid var(--border);
+  font-family: var(--fm); font-size: 9px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.scan-result-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 10px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background .15s;
+}
+.scan-result-item:last-child { border-bottom: none; }
+.scan-result-item:hover { background: rgba(59,130,246,.06); }
+.scan-result-ip   { font-family: var(--fm); font-size: 11px; color: var(--text); }
+.scan-result-port { font-family: var(--fm); font-size: 10px; color: var(--muted); }
+.cctv-connect-btn {
+  width: 100%; margin-top: 5px; padding: 9px; background: transparent;
+  border: 1px solid var(--acc2); border-radius: 7px; color: var(--acc2);
+  font-family: var(--fb); font-size: 12px; font-weight: 600; cursor: pointer; transition: all .15s;
+}
+.cctv-connect-btn:hover { background: rgba(59,130,246,.08); }
+.cctv-connect-btn.connected { border-color: var(--danger); color: var(--danger); }
+.cctv-connect-btn.connected:hover { background: rgba(239,68,68,.08); }
+.cctv-test-btn {
+  width: 100%; margin-bottom: 5px; padding: 8px; background: transparent;
+  border: 1px solid var(--bord2); border-radius: 7px; color: var(--muted);
+  font-family: var(--fb); font-size: 12px; cursor: pointer; transition: all .15s;
+}
+.cctv-test-btn:hover:not(:disabled) { background: rgba(59,130,246,.08); border-color: var(--acc2); }
+.cctv-test-btn:disabled { opacity: .35; cursor: not-allowed; }
+.cctv-test-btn.success { border-color: var(--accent); color: var(--accent); }
+.cctv-test-btn.fail    { border-color: var(--danger); color: var(--danger); }
+.cctv-status-row {
+  display: flex; align-items: center; gap: 6px; padding: 5px 0;
+  font-family: var(--fm); font-size: 10px; color: var(--muted);
+}
+.cctv-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
+.cctv-dot.live { background: var(--danger); animation: blink .8s ease infinite; }
+.cctv-dot.connecting { background: var(--acc2); animation: blink .5s ease infinite; }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ══ SIDEBAR ══════════════════════════════════════════════ -->
+  <div class="sidebar">
+    <div class="sb-logo">
+      <div class="logo-mark">👁</div>
+      <div class="logo-name">Eye<span>Keeper</span></div>
+    </div>
+
+    <!-- Mode -->
+    <div class="sb-section">
+      <div class="sb-label">Input Mode</div>
+      <div class="mode-tabs">
+        <button class="mode-tab active" id="tab-image" onclick="setMode('image')">🖼️ Image</button>
+        <button class="mode-tab"        id="tab-video" onclick="setMode('video')">🎬 Video</button>
+        <button class="mode-tab"        id="tab-live"  onclick="setMode('live')">📹 Live</button>
+        <button class="mode-tab"        id="tab-cctv"  onclick="setMode('cctv')">📷 CCTV</button>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- ══ CCTV SECTION ══════════════════════════════════════════ -->
+    <div class="sb-section cctv-section" id="cctvSection">
+      <div class="sb-label">📷 CCTV Brand</div>
+      <div class="cctv-brand-grid" id="cctvBrandGrid"></div>
+
+      <div class="cctv-field">
+        <label>IP ADDRESS</label>
+        <input class="cctv-input" id="cctvIP" placeholder="e.g. 192.168.1.64" oninput="buildCCTVUrl()"/>
+      </div>
+      <div class="cctv-row">
+        <div class="cctv-field" style="flex:1">
+          <label>PORT</label>
+          <input class="cctv-input" id="cctvPort" placeholder="554" value="554" oninput="buildCCTVUrl()"/>
+        </div>
+        <div class="cctv-field" style="flex:1">
+          <label>CHANNEL</label>
+          <input class="cctv-input" id="cctvCh" placeholder="1" value="1" oninput="buildCCTVUrl()"/>
+        </div>
+      </div>
+      <div class="cctv-row">
+        <div class="cctv-field" style="flex:1">
+          <label>USERNAME</label>
+          <input class="cctv-input" id="cctvUser" placeholder="admin" oninput="buildCCTVUrl()"/>
+        </div>
+        <div class="cctv-field" style="flex:1">
+          <label>PASSWORD</label>
+          <input class="cctv-input" id="cctvPass" placeholder="••••" type="password" oninput="buildCCTVUrl()"/>
+        </div>
+      </div>
+      <div class="cctv-field">
+        <label>RTSP URL <span style="color:var(--acc2);cursor:pointer;font-size:9px" onclick="toggleCustomUrl()">[edit]</span></label>
+        <textarea class="cctv-url-box" id="cctvUrlBox" rows="2" placeholder="rtsp://..."></textarea>
+      </div>
+      <div class="cctv-status-row">
+        <div class="cctv-dot" id="cctvDot"></div>
+        <span id="cctvStatusText">Not connected</span>
+      </div>
+      <button class="scan-btn" id="cctvScanBtn" onclick="scanCCTV()">🔍 Auto-Detect on Network</button>
+      <div class="scan-results" id="cctvScanResults">
+        <div class="scan-results-header">
+          <span>FOUND DEVICES</span>
+          <span id="cctvScanCount">0</span>
+        </div>
+        <div id="cctvScanList"></div>
+      </div>
+      <button class="cctv-test-btn" id="cctvTestBtn" onclick="testCCTV()">🧪 Test Connection</button>
+      <button class="cctv-connect-btn" id="cctvConnectBtn" onclick="toggleCCTV()">📡 Connect to CCTV</button>
+    </div>
+    <!-- ══ END CCTV SECTION ═══════════════════════════════════════ -->
+
+    <div class="divider"></div>
+
+    <!-- Target Face -->
+    <div class="sb-section">
+      <div class="sb-label">🎯 Target Face</div>
+      <div class="face-zone" id="faceZone" onclick="document.getElementById('faceFileInput').click()">
+        <input type="file" id="faceFileInput" accept="image/*" onchange="onFaceFile(event)"/>
+        <div class="face-placeholder" id="facePlaceholder">
+          <div class="face-ph-icon">🧑</div>
+          <div class="face-ph-text">Upload a face to track</div>
+          <div class="face-ph-text" style="font-size:11px;opacity:.6;">click or drag & drop</div>
+        </div>
+        <div id="faceLoaded" style="display:none">
+          <button class="face-clear" onclick="clearTarget(event)">✕</button>
+          <div class="face-loaded-row">
+            <img class="face-thumb" id="faceThumb" src="" alt="target"/>
+            <div class="face-loaded-info">
+              <div class="face-loaded-name" id="faceLoadedName">—</div>
+              <div class="face-loaded-sub">Recognition active</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <input class="face-name-input" id="faceNameInput" placeholder="Subject name…" value="Target"/>
+      <div id="backendBadge" class="backend-badge none" style="display:none">⚙ loading…</div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Detection Prompts -->
+    <div class="sb-section">
+      <div class="sb-label">Detection Prompts</div>
+      <div class="prompt-row">
+        <input class="prompt-input" id="promptInput" placeholder="e.g. car, fire, weapon"/>
+        <button class="add-btn" onclick="addTag()">+</button>
+      </div>
+      <div class="tags-wrap" id="tagsWrap"></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Quick Prompts -->
+    <div class="sb-section">
+      <div class="sb-label">Quick Prompts</div>
+      <div class="quick-grid">
+        <button class="quick-btn" onclick="setQuick('person, worker, crowd')">👷 People &amp; Workers</button>
+        <button class="quick-btn" onclick="setQuick('car, truck, motorcycle, bus')">🚗 Vehicles</button>
+        <button class="quick-btn" onclick="setQuick('ppe, hardhat, safety vest')">🦺 PPE / Safety</button>
+        <button class="quick-btn" onclick="setQuick('fire, smoke, flames')">🔥 Fire Hazard</button>
+        <button class="quick-btn" onclick="setQuick('knife, gun, weapon')">⚠️ Dangerous Items</button>
+        <button class="quick-btn" onclick="setQuick('dog, cat, bird, animal')">🐾 Animals</button>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Capture Settings -->
+    <div class="sb-section">
+      <div class="sb-label">Capture Settings</div>
+      <div class="toggle-row">
+        <span class="toggle-label">📸 Auto-screenshot</span>
+        <label class="toggle-sw"><input type="checkbox" id="tglSS" checked/><div class="t-track"></div><div class="t-knob"></div></label>
+      </div>
+      <div class="toggle-row">
+        <span class="toggle-label">✂️ Save person crop</span>
+        <label class="toggle-sw"><input type="checkbox" id="tglCrop" checked/><div class="t-track"></div><div class="t-knob"></div></label>
+      </div>
+      <div class="toggle-row">
+        <span class="toggle-label">🧬 Face recognition</span>
+        <label class="toggle-sw"><input type="checkbox" id="tglFace" checked/><div class="t-track"></div><div class="t-knob"></div></label>
+      </div>
+      <div class="slider-row" style="margin-top:8px">
+        <div class="slider-label">Capture Cooldown <span id="cooldownVal">2s</span></div>
+        <input type="range" id="cooldownSlider" min="1" max="30" value="2"
+          oninput="document.getElementById('cooldownVal').textContent=this.value+'s'"/>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Settings -->
+    <div class="sb-section">
+      <div class="sb-label">Settings</div>
+      <div class="slider-group">
+        <div class="slider-row">
+          <div class="slider-label">Confidence <span id="confVal">25%</span></div>
+          <input type="range" id="confSlider" min="5" max="85" value="25"
+            oninput="document.getElementById('confVal').textContent=this.value+'%'"/>
+        </div>
+        <div class="slider-row">
+          <div class="slider-label">Max Detections <span id="maxVal">20</span></div>
+          <input type="range" id="maxSlider" min="1" max="50" value="20"
+            oninput="document.getElementById('maxVal').textContent=this.value"/>
+        </div>
+        <div class="slider-row">
+          <div class="slider-label">Box Thickness <span id="thickVal">2</span></div>
+          <input type="range" id="thickSlider" min="1" max="6" value="2"
+            oninput="document.getElementById('thickVal').textContent=this.value"/>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider" style="margin-top:8px"></div>
+
+    <!-- ══ USER PROFILE WIDGET ══ -->
+    <div class="sb-section" style="padding-bottom:10px">
+      <div class="user-widget">
+        <div class="user-widget-top">
+          <div class="user-avatar" id="userAvatar">?</div>
+          <div class="user-email"  id="userEmail">loading…</div>
+          <div class="plan-pill free" id="planPill">free</div>
+        </div>
+        <div class="user-widget-btns">
+          <button class="upgrade-btn" onclick="openUpgradeModal()">⚡ Upgrade</button>
+          <button class="logout-btn"  onclick="doLogout()">Sign out</button>
+        </div>
+      </div>
+    </div>
+
+    <button class="detect-btn" id="detectBtn" onclick="runDetect()" disabled>
+      ⚡ Detect Objects
+    </button>
+  </div>
+
+  <!-- ══ MAIN ═════════════════════════════════════════════════ -->
+  <div class="main">
+
+    <!-- Tab bar -->
+    <div class="top-tabs">
+      <button class="top-tab active" id="topTab-detect"  onclick="showTab('detect')">🔍 Detection</button>
+      <button class="top-tab target-tab" id="topTab-targets" onclick="showTab('targets')">
+        🎯 Target Hits <span class="tab-badge" id="targetTabBadge">0</span>
+      </button>
+      <button class="top-tab" id="topTab-persons" onclick="showTab('persons')">👤 Persons</button>
+      <button class="top-tab" id="topTab-log"     onclick="showTab('log')">📋 Log</button>
+    </div>
+
+    <!-- Status bar -->
+    <div class="status-bar">
+      <div class="status-dot" id="statusDot"></div>
+      <div class="status-text" id="statusText">Select a mode, add prompts, then click Detect.</div>
+      <div class="status-badge" id="statusBadge"></div>
+      <div class="target-badge" id="targetBadge" onclick="showTab('targets')">🎯 0 matches</div>
+    </div>
+
+    <!-- ── Detection panel ── -->
+    <div class="view-panel active" id="panel-detect">
+      <div class="canvas-area" id="canvasArea">
+        <div class="upload-zone" id="uploadZone"
+             ondragover="onDragOver(event)" ondragleave="onDragLeave()"
+             ondrop="onDrop(event)" onclick="triggerBrowse()">
+          <div class="upload-icon"  id="upIcon">🖼️</div>
+          <div class="upload-title" id="upTitle">Drop image here</div>
+          <div class="upload-sub">or click to browse</div>
+          <div class="upload-fmts" id="upFmts">PNG · JPG · WEBP · BMP</div>
+          <button class="browse-btn" onclick="event.stopPropagation(); triggerBrowse()">Browse File</button>
+          <input type="file" id="fileInput" style="display:none" onchange="onFileChosen(event)"/>
+        </div>
+        <canvas id="mainCanvas"></canvas>
+        <div id="streamBox"><img id="streamImg" alt="stream"/></div>
+        <div class="hud" id="hud"></div>
+      </div>
+      <div class="results-panel" id="resultsPanel">
+        <div class="results-title">Detected Objects</div>
+        <div class="results-list" id="resultsList"></div>
+      </div>
+    </div>
+
+    <!-- ── Target hits gallery ── -->
+    <div class="view-panel" id="panel-targets">
+      <div class="gallery-panel">
+        <div class="gallery-toolbar">
+          <button class="gal-refresh" onclick="loadGallery('targets')">↻ Refresh</button>
+          <input class="gal-search" id="searchTargets" placeholder="Filter…" oninput="filterGallery('targets')"/>
+          <span class="gal-count" id="countTargets">0 files</span>
+        </div>
+        <div class="gallery-grid-wrap">
+          <div class="gallery-grid" id="gridTargets">
+            <div class="gallery-empty"><div class="gallery-empty-icon">🎯</div><div class="gallery-empty-text">No target matches yet</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── All persons gallery ── -->
+    <div class="view-panel" id="panel-persons">
+      <div class="gallery-panel">
+        <div class="gallery-toolbar">
+          <div class="gal-filter-wrap">
+            <button class="gal-filter-btn active" id="gfAll"     onclick="setFolderFilter('all')">All</button>
+            <button class="gal-filter-btn"        id="gfPersons" onclick="setFolderFilter('persons')">👤 Persons</button>
+            <button class="gal-filter-btn"        id="gfCrops"   onclick="setFolderFilter('crops')">✂️ Crops</button>
+          </div>
+          <button class="gal-refresh" onclick="loadGallery('persons')">↻ Refresh</button>
+          <input class="gal-search" id="searchPersons" placeholder="Filter…" oninput="filterGallery('persons')"/>
+          <span class="gal-count" id="countPersons">0 files</span>
+        </div>
+        <div class="gallery-grid-wrap">
+          <div class="gallery-grid" id="gridPersons">
+            <div class="gallery-empty"><div class="gallery-empty-icon">👤</div><div class="gallery-empty-text">No person captures yet</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Detection log ── -->
+    <div class="view-panel" id="panel-log">
+      <div class="log-panel">
+        <div class="log-toolbar">
+          <label class="log-targets-label">
+            <input type="checkbox" id="logTargetsOnly" onchange="loadLog()"/>
+            Show target matches only
+          </label>
+          <button class="log-clear-btn" onclick="clearLog()">🗑 Clear log</button>
+        </div>
+        <div class="log-body">
+          <table class="log-table">
+            <thead>
+              <tr>
+                <th>Time</th><th>Video TS</th><th>Label</th>
+                <th>Conf</th><th>Type</th><th>Score</th><th>Source</th>
+              </tr>
+            </thead>
+            <tbody id="logBody"></tbody>
+          </table>
+          <div class="log-empty" id="logEmpty">No detections logged yet</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- Lightbox -->
+<div id="lightbox">
+  <button id="lbClose" onclick="closeLb()">✕</button>
+  <img id="lbImg" src="" alt=""/>
+  <div id="lbName"></div>
+  <button id="lbDl" onclick="downloadLb()">⬇ Download</button>
+</div>
+
+<!-- Upgrade Modal -->
+<div id="upgradeModal">
+  <div class="upgrade-modal-box">
+    <button class="modal-close" onclick="closeUpgradeModal()">✕</button>
+    <h2>Upgrade EyeKeeper</h2>
+    <p class="sub">Choose a plan to unlock more features and storage.</p>
+    <div class="plan-cards" id="planCards">
+      <div style="color:var(--muted);font-family:var(--fm);font-size:12px;grid-column:1/-1;text-align:center;padding:30px 0">Loading plans…</div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+
+const API = 'http://localhost:8000';
+
+// ══════════════════════════════════════════════════════════════════
+// AUTH GUARD — redirect to /login if no token
+// ══════════════════════════════════════════════════════════════════
+const _token = localStorage.getItem('ek_token');
+const _user  = JSON.parse(localStorage.getItem('ek_user') || 'null');
+if (!_token) {
+  window.location.href = '/login';
+  throw new Error('unauthenticated');
+}
+
+/** Authenticated fetch — always includes Authorization header. */
+function authFetch(url, opts = {}) {
+  opts.headers = Object.assign({}, opts.headers || {}, { 'Authorization': 'Bearer ' + _token });
+  return fetch(url, opts);
+}
+
+// ── State ─────────────────────────────────────────────────────────
+let mode        = 'image';
+let tags        = [];
+let tagColorIdx = 0;
+let lastDets    = [];
+let isDetecting = false;
+let imageEl     = null;
+let lastVideoFile = null;
+let targetMatchCount = 0;
+let allTargetsData = [], allPersonsData = [];
+let folderFilter = 'all';
+let lbCurrent = null;
+let _plans = [];
+
+// Canvas / render
+let canvas, ctx;
+let drawW = 0, drawH = 0;
+let stableBoxes = {};
+const SMOOTH  = 0.25;
+const MIN_MOV = 3;
+
+const PALETTE  = ['#00e5a0','#3b82f6','#f97316','#ec4899','#a78bfa','#06b6d4','#eab308','#ef4444'];
+const TARGET_COL = '#f97316';
+const colCache = {};
+let fps = 0, fpsN = 0, fpsT = performance.now();
+
+// ── Boot ──────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  canvas = document.getElementById('mainCanvas');
+  ctx    = canvas.getContext('2d');
+  document.getElementById('promptInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') addTag();
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeLb(); closeUpgradeModal(); } });
+  requestAnimationFrame(renderLoop);
+  setInterval(liveRefresh, 5000);
+  checkExistingTarget();
+  loadCCTVBrands();
+  loadUserProfile();
+  fetchPlans();
+});
+
+// ── User profile ──────────────────────────────────────────────────
+function loadUserProfile() {
+  if (!_user) return;
+  const initials = (_user.email || '?')[0].toUpperCase();
+  document.getElementById('userAvatar').textContent = initials;
+  document.getElementById('userEmail').textContent  = _user.email;
+  const plan = _user.plan || 'free';
+  const pill = document.getElementById('planPill');
+  pill.textContent  = plan;
+  pill.className    = 'plan-pill ' + plan;
+  // Refresh from /me in case plan changed
+  authFetch(`${API}/me`)
+    .then(r => r.json())
+    .then(d => {
+      if (d.plan) {
+        const p = document.getElementById('planPill');
+        p.textContent = d.plan; p.className = 'plan-pill ' + d.plan;
+        const u = { ..._user, plan: d.plan };
+        localStorage.setItem('ek_user', JSON.stringify(u));
+      }
+    })
+    .catch(() => {});
+}
+
+function doLogout() {
+  localStorage.removeItem('ek_token');
+  localStorage.removeItem('ek_user');
+  window.location.href = '/login';
+}
+
+// ── Upgrade modal ─────────────────────────────────────────────────
+async function fetchPlans() {
+  try {
+    const r = await fetch(`${API}/plans`);
+    const d = await r.json();
+    _plans = d.plans || [];
+  } catch(e) {}
+}
+
+function openUpgradeModal() {
+  const box = document.getElementById('planCards');
+  if (!_plans.length) {
+    box.innerHTML = '<div style="color:var(--muted);font-family:var(--fm);font-size:12px;grid-column:1/-1;text-align:center;padding:30px 0">No plans available — check Razorpay config.</div>';
+  } else {
+    box.innerHTML = '';
+    _plans.forEach((p, i) => {
+      const price = (p.price / 100).toLocaleString('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 });
+      const card  = document.createElement('div');
+      card.className = 'plan-card' + (i === 1 ? ' highlighted' : '');
+      card.innerHTML = `
+        <div class="plan-label">Plan</div>
+        <div class="plan-name">${p.name}</div>
+        <div class="plan-price">${price}<span> / month</span></div>
+        <ul class="plan-features">
+          ${p.features.map(f => `<li>${f}</li>`).join('')}
+        </ul>
+        <button class="plan-select-btn" onclick="startPayment('${p.id}','${p.name}',${p.price})">
+          Choose ${p.name}
+        </button>`;
+      box.appendChild(card);
+    });
+  }
+  document.getElementById('upgradeModal').classList.add('open');
+}
+
+function closeUpgradeModal() {
+  document.getElementById('upgradeModal').classList.remove('open');
+}
+
+async function startPayment(planId, planName, amount) {
+  toast(`⏳ Creating order for ${planName}…`);
+  try {
+    const form = new FormData();
+    form.append('plan_id', planId);
+    const r = await authFetch(`${API}/create_order`, { method: 'POST', body: form });
+    const d = await r.json();
+    if (!r.ok) { toast('⚠️ ' + (d.detail || 'Order creation failed')); return; }
+
+    const options = {
+      key:         d.key_id,
+      amount:      d.amount,
+      currency:    d.currency,
+      name:        'EyeKeeper',
+      description: `${d.plan_name} Plan`,
+      order_id:    d.order_id,
+      handler: async (response) => {
+        const vf = new FormData();
+        vf.append('razorpay_order_id',   response.razorpay_order_id);
+        vf.append('razorpay_payment_id', response.razorpay_payment_id);
+        vf.append('razorpay_signature',  response.razorpay_signature);
+        vf.append('plan_id',             planId);
+        const vr = await authFetch(`${API}/verify_payment`, { method: 'POST', body: vf });
+        const vd = await vr.json();
+        if (vr.ok) {
+          toast(`✅ Upgraded to ${planName}!`);
+          // Update local state
+          const u = JSON.parse(localStorage.getItem('ek_user') || '{}');
+          u.plan = planId;
+          localStorage.setItem('ek_user', JSON.stringify(u));
+          const pill = document.getElementById('planPill');
+          pill.textContent = planId; pill.className = 'plan-pill ' + planId;
+          closeUpgradeModal();
+        } else {
+          toast('⚠️ Payment verification failed');
+        }
+      },
+      prefill: { email: _user?.email || '' },
+      theme: { color: '#00e5a0' },
+    };
+    const rzp = new Razorpay(options);
+    rzp.open();
+    closeUpgradeModal();
+  } catch(err) {
+    toast('⚠️ Payment error: ' + err.message);
+  }
+}
+
+function liveRefresh() {
+  const active = document.querySelector('.view-panel.active')?.id;
+  if (active === 'panel-targets') loadGallery('targets');
+  else if (active === 'panel-persons') loadGallery('persons');
+  else if (active === 'panel-log') loadLog();
+}
+
+// ── Tab switching ─────────────────────────────────────────────────
+function showTab(which) {
+  ['detect','targets','persons','log'].forEach(id => {
+    document.getElementById('panel-'+id).classList.toggle('active', id === which);
+    document.getElementById('topTab-'+id).classList.toggle('active', id === which);
+  });
+  if (which === 'targets') loadGallery('targets');
+  if (which === 'persons') loadGallery('persons');
+  if (which === 'log')     loadLog();
+}
+
+// ── Face upload ───────────────────────────────────────────────────
+async function onFaceFile(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const name = document.getElementById('faceNameInput').value.trim() || 'Target';
+  const form = new FormData();
+  form.append('file', file); form.append('name', name);
+  setStatus('active', '🧬 Extracting face embedding…');
+  try {
+    const r = await authFetch(`${API}/upload_face`, { method: 'POST', body: form });
+    const d = await r.json();
+    if (!r.ok) { toast('⚠️ ' + (d.error || 'Upload failed')); setStatus('idle',''); return; }
+    setFaceUI(d.thumb_b64, d.name, d.backend);
+    setStatus('idle', `🎯 Target "${d.name}" ready — recognition active`);
+    toast(`✓ Target "${d.name}" set`);
+  } catch(err) {
+    toast('⚠️ ' + err.message); setStatus('idle','');
+  }
+  e.target.value = '';
+}
+function setFaceUI(b64, name, backend) {
+  document.getElementById('faceThumb').src = 'data:image/jpeg;base64,' + b64;
+  document.getElementById('faceLoadedName').textContent = name;
+  document.getElementById('facePlaceholder').style.display = 'none';
+  document.getElementById('faceLoaded').style.display     = 'block';
+  document.getElementById('faceZone').classList.add('loaded');
+  const bb = document.getElementById('backendBadge');
+  bb.className = 'backend-badge ' + (backend || 'none');
+  bb.style.display = 'inline-flex';
+  bb.textContent = backend === 'deepface' ? '⚡ DeepFace / Facenet'
+                 : backend === 'opencv'   ? '🔍 OpenCV Haar (basic)'
+                 :                          '⚠ Recognition disabled';
+}
+async function clearTarget(e) {
+  e.stopPropagation();
+  await authFetch(`${API}/target_face`, { method: 'DELETE' });
+  document.getElementById('facePlaceholder').style.display = 'block';
+  document.getElementById('faceLoaded').style.display      = 'none';
+  document.getElementById('faceZone').classList.remove('loaded');
+  document.getElementById('backendBadge').style.display = 'none';
+  toast('Target cleared');
+}
+async function checkExistingTarget() {
+  try {
+    const ri = await authFetch(`${API}/info`);
+    if (ri.ok) {
+      const di = await ri.json();
+      const bb = document.getElementById('backendBadge');
+      bb.className = 'backend-badge ' + (di.face_backend || 'none');
+    }
+    const r = await authFetch(`${API}/target_face`);
+    const d = await r.json();
+    if (d.set) setFaceUI(d.thumb_b64, d.name, d.backend);
+  } catch(e) {}
+}
+
+// ── Gallery ───────────────────────────────────────────────────────
+async function loadGallery(which) {
+  const folder = which === 'targets' ? 'targets'
+               : folderFilter === 'all' ? 'all' : folderFilter;
+  try {
+    const r = await authFetch(`${API}/screenshots?folder=${folder}&limit=300`);
+    const d = await r.json();
+    const items = d.screenshots || [];
+    if (which === 'targets') { allTargetsData = items; renderGallery('targets', items); }
+    else { allPersonsData = items; renderGallery('persons', items); }
+  } catch(e) {}
+}
+function setFolderFilter(f) {
+  folderFilter = f;
+  ['all','persons','crops'].forEach(n =>
+    document.getElementById('gf'+n.charAt(0).toUpperCase()+n.slice(1))
+      ?.classList.toggle('active', n === f)
+  );
+  loadGallery('persons');
+}
+function filterGallery(which) {
+  const q   = document.getElementById('search' + which.charAt(0).toUpperCase() + which.slice(1)).value.toLowerCase();
+  const src = which === 'targets' ? allTargetsData : allPersonsData;
+  renderGallery(which, q ? src.filter(s => s.filename.toLowerCase().includes(q)) : src);
+}
+function renderGallery(which, items) {
+  const grid  = document.getElementById('grid' + which.charAt(0).toUpperCase() + which.slice(1));
+  const count = document.getElementById('count' + which.charAt(0).toUpperCase() + which.slice(1));
+  count.textContent = items.length + ' file' + (items.length !== 1 ? 's' : '');
+  if (!items.length) {
+    grid.innerHTML = `<div class="gallery-empty"><div class="gallery-empty-icon">${which==='targets'?'🎯':'👤'}</div><div class="gallery-empty-text">No captures yet</div></div>`;
+    return;
+  }
+  grid.innerHTML = '';
+  items.forEach(item => {
+    const isTarget = item.folder === 'targets' || item.filename.includes('TARGET');
+    const isCrop   = item.folder === 'crops';
+    const card = document.createElement('div');
+    card.className = 'ss-card' + (isTarget ? ' is-target' : '');
+    card.innerHTML = `
+      <img class="ss-thumb" src="${API}/screenshots/${item.folder}/${item.filename}?token=${encodeURIComponent(_token)}" loading="lazy"/>
+      <span class="ss-tag ${isTarget?'target':isCrop?'crop':'person'}">${isTarget?'TARGET':isCrop?'CROP':'PERSON'}</span>
+      <button class="ss-del" onclick="event.stopPropagation();delSS('${item.folder}','${item.filename}')">✕</button>
+      <div class="ss-info">
+        <div class="ss-name ${isTarget?'is-target':''}">${item.filename.replace('.jpg','').substring(0,32)}</div>
+        <div class="ss-meta">${new Date(item.modified).toLocaleString()} · ${item.size_kb}KB</div>
+      </div>`;
+    card.onclick = () => openLb(item);
+    grid.appendChild(card);
+  });
+}
+async function delSS(folder, filename) {
+  if (!confirm('Delete ' + filename + '?')) return;
+  await authFetch(`${API}/screenshots/${folder}/${filename}`, { method: 'DELETE' });
+  toast('🗑 Deleted');
+  loadGallery(folder === 'targets' ? 'targets' : 'persons');
+}
+
+// ── Log ───────────────────────────────────────────────────────────
+async function loadLog() {
+  const to = document.getElementById('logTargetsOnly').checked;
+  try {
+    const r = await authFetch(`${API}/person_log?limit=200&targets_only=${to}`);
+    const d = await r.json();
+    renderLog(d.entries || []);
+  } catch(e) {}
+}
+function renderLog(entries) {
+  const tbody = document.getElementById('logBody');
+  const empty = document.getElementById('logEmpty');
+  tbody.innerHTML = '';
+  empty.style.display = entries.length ? 'none' : 'block';
+  entries.forEach(e => {
+    const tr = document.createElement('tr');
+    tr.className = e.matched_target ? 'is-target' : '';
+    const vts = e.video_ts != null
+      ? `${Math.floor(e.video_ts/60)}:${(e.video_ts%60).toFixed(1).padStart(4,'0')}` : '—';
+    const s = e.target_score;
+    tr.innerHTML = `
+      <td>${new Date(e.wall_ts).toLocaleTimeString()}</td>
+      <td>${vts}</td>
+      <td>${e.label}</td>
+      <td>${(e.confidence*100).toFixed(0)}%</td>
+      <td><span class="log-badge ${e.matched_target?'target':'person'}">${e.matched_target?'TARGET':'person'}</span></td>
+      <td>${s > 0 ? `<div class="score-wrap">${(s*100).toFixed(0)}%<div class="score-bar"><div class="score-fill ${e.matched_target?'match':''}" style="width:${Math.min(100,s*100)}%"></div></div></div>` : '—'}</td>
+      <td>${e.source}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+async function clearLog() {
+  if (!confirm('Clear detection log?')) return;
+  await authFetch(`${API}/person_log`, { method: 'DELETE' });
+  loadLog(); toast('Log cleared');
+}
+
+// ── Lightbox ──────────────────────────────────────────────────────
+function openLb(item) {
+  lbCurrent = item;
+  document.getElementById('lbImg').src  = `${API}/screenshots/${item.folder}/${item.filename}?token=${encodeURIComponent(_token)}`;
+  document.getElementById('lbName').textContent = item.filename;
+  document.getElementById('lightbox').classList.add('open');
+}
+function closeLb() { document.getElementById('lightbox').classList.remove('open'); lbCurrent = null; }
+function downloadLb() {
+  if (!lbCurrent) return;
+  const a = document.createElement('a');
+  a.href     = `${API}/screenshots/${lbCurrent.folder}/${lbCurrent.filename}?token=${encodeURIComponent(_token)}`;
+  a.download = lbCurrent.filename; a.click();
+}
+
+// ── Display manager ───────────────────────────────────────────────
+function showDisplay(which) {
+  document.getElementById('uploadZone').classList.toggle('hidden', which !== 'upload');
+  document.getElementById('mainCanvas').style.display  = which === 'canvas' ? 'block' : 'none';
+  document.getElementById('streamBox').style.display   = which === 'stream' ? 'flex'  : 'none';
+  document.getElementById('hud').style.display         = which !== 'upload' ? 'block' : 'none';
+}
+
+// ── Render loop ───────────────────────────────────────────────────
+function renderLoop() {
+  if (mode === 'image' && imageEl) {
+    const area = document.getElementById('canvasArea');
+    const aw = area.clientWidth, ah = area.clientHeight;
+    const iw = imageEl.naturalWidth, ih = imageEl.naturalHeight;
+    if (iw && ih) {
+      const scale = Math.min(aw / iw, ah / ih);
+      drawW = Math.floor(iw * scale);
+      drawH = Math.floor(ih * scale);
+      if (canvas.width !== drawW || canvas.height !== drawH) {
+        canvas.width  = drawW;
+        canvas.height = drawH;
+      }
+      ctx.drawImage(imageEl, 0, 0, drawW, drawH);
+      drawBoxes();
+    }
+    fpsN++;
+    const now = performance.now();
+    if (now - fpsT >= 1000) {
+      fps = Math.round(fpsN * 1000 / (now - fpsT));
+      fpsN = 0; fpsT = now;
+      document.getElementById('hud').textContent = `FPS ${fps}  Conf ${sliderVal('confSlider')}%`;
+    }
+  }
+  requestAnimationFrame(renderLoop);
+}
+
+// ── Draw boxes ────────────────────────────────────────────────────
+function drawBoxes() {
+  if (!lastDets.length || !drawW || !drawH) return;
+  const confMin = sliderVal('confSlider') / 100;
+  const thick   = sliderVal('thickSlider');
+  ctx.save();
+  ctx.font = `bold 12px "JetBrains Mono", monospace`;
+  const active = new Set();
+
+  lastDets.filter(d => d.confidence >= confMin).forEach((det, idx) => {
+    if (!det.bbox_norm || det.bbox_norm.length !== 4) return;
+    const key = det.label + '_' + Math.round(det.bbox_norm[0] * 20) + '_' + idx;
+    active.add(key);
+    const target = {
+      x1: det.bbox_norm[0] * drawW, y1: det.bbox_norm[1] * drawH,
+      x2: det.bbox_norm[2] * drawW, y2: det.bbox_norm[3] * drawH,
+    };
+    if (!stableBoxes[key]) {
+      stableBoxes[key] = { ...target };
+    } else {
+      const p = stableBoxes[key];
+      if (Math.abs(target.x1 - p.x1) < MIN_MOV && Math.abs(target.y1 - p.y1) < MIN_MOV)
+        Object.assign(target, p);
+      p.x1 += (target.x1 - p.x1) * SMOOTH;
+      p.y1 += (target.y1 - p.y1) * SMOOTH;
+      p.x2 += (target.x2 - p.x2) * SMOOTH;
+      p.y2 += (target.y2 - p.y2) * SMOOTH;
+    }
+    let { x1, y1, x2, y2 } = stableBoxes[key];
+    x1 = Math.max(0, Math.min(canvas.width,  x1));
+    y1 = Math.max(0, Math.min(canvas.height, y1));
+    x2 = Math.max(0, Math.min(canvas.width,  x2));
+    y2 = Math.max(0, Math.min(canvas.height, y2));
+    if (x2 <= x1 || y2 <= y1) return;
+
+    const isTarget = det.matched_target;
+    const col = isTarget ? TARGET_COL : labelColor(det.label);
+    ctx.strokeStyle = col;
+    ctx.lineWidth   = isTarget ? thick + 1 : thick;
+    if (isTarget) { ctx.shadowColor = TARGET_COL; ctx.shadowBlur = 10; }
+    ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+    ctx.shadowBlur = 0;
+    const text = isTarget ? `★ ${det.label}  ${Math.round(det.confidence * 100)}%`
+                          : `${det.label}  ${Math.round(det.confidence * 100)}%`;
+    const tw = ctx.measureText(text).width;
+    const lh = 20, pad = 6;
+    const lx = x1, ly = y1 >= lh + 3 ? y1 - lh - 2 : y1 + 2;
+    ctx.fillStyle = col;
+    ctx.fillRect(lx, ly, tw + pad * 2, lh);
+    ctx.fillStyle = isTarget ? '#fff' : '#000';
+    ctx.fillText(text, lx + pad, ly + 14);
+  });
+
+  Object.keys(stableBoxes).forEach(k => { if (!active.has(k)) delete stableBoxes[k]; });
+  ctx.restore();
+}
+
+function labelColor(label) {
+  if (label && label.includes('TARGET')) return TARGET_COL;
+  if (!colCache[label]) colCache[label] = PALETTE[Object.keys(colCache).length % PALETTE.length];
+  return colCache[label];
+}
+
+// ── Mode switching ────────────────────────────────────────────────
+function setMode(m) {
+  mode = m;
+  ['image','video','live','cctv'].forEach(id => {
+    const el = document.getElementById('tab-' + id);
+    if (el) el.classList.toggle('active', id === m);
+  });
+  document.getElementById('streamImg').src = '';
+  imageEl = null; lastDets = []; stableBoxes = {}; lastVideoFile = null;
+  showDisplay('upload');
+  hideResults();
+
+  document.getElementById('cctvSection').classList.toggle('visible', m === 'cctv');
+  document.getElementById('detectBtn').style.display = m === 'cctv' ? 'none' : '';
+
+  const fi = document.getElementById('fileInput');
+  if (m === 'image') {
+    document.getElementById('upIcon').textContent  = '🖼️';
+    document.getElementById('upTitle').textContent = 'Drop image here';
+    document.getElementById('upFmts').textContent  = 'PNG · JPG · WEBP · BMP';
+    fi.accept = 'image/*';
+    setStatus('idle', 'Load an image, add prompts, then click Detect.');
+  } else if (m === 'video') {
+    document.getElementById('upIcon').textContent  = '🎬';
+    document.getElementById('upTitle').textContent = 'Drop video here';
+    document.getElementById('upFmts').textContent  = 'MP4 · MOV · AVI · WEBM';
+    fi.accept = 'video/*';
+    setStatus('idle', 'Load a video, add prompts, then click Detect.');
+  } else if (m === 'cctv') {
+    document.getElementById('uploadZone').classList.add('hidden');
+    setStatus('idle', '📷 Configure a CCTV stream in the sidebar, then click Connect.');
+  } else {
+    document.getElementById('uploadZone').classList.add('hidden');
+    setStatus('live', '📹 Setting up camera…');
+    startCamera();
+  }
+  checkBtn();
+}
+
+// ── CCTV Logic ────────────────────────────────────────────────────
+const CCTV_BRANDS = {};
+let cctvActiveBrand = 'cpplus';
+let cctvConnected   = false;
+
+async function loadCCTVBrands() {
+  try {
+    const r = await authFetch(`${API}/cctv/brands`);
+    const d = await r.json();
+    d.brands.forEach(b => { CCTV_BRANDS[b.id] = b; });
+    renderBrandGrid();
+  } catch(e) {
+    const fallback = [
+      {id:'cpplus',name:'CP Plus',template:'rtsp://{user}:{pass}@{ip}:{port}/cam/realmonitor?channel={channel}&subtype=0',default_port:554},
+      {id:'hikvision',name:'Hikvision',template:'rtsp://{user}:{pass}@{ip}:{port}/Streaming/Channels/{channel}01',default_port:554},
+      {id:'dahua',name:'Dahua',template:'rtsp://{user}:{pass}@{ip}:{port}/cam/realmonitor?channel={channel}&subtype=0',default_port:554},
+      {id:'generic',name:'Generic RTSP',template:'rtsp://{user}:{pass}@{ip}:{port}/',default_port:554},
+      {id:'custom',name:'Custom URL',template:'',default_port:554},
+    ];
+    fallback.forEach(b => { CCTV_BRANDS[b.id] = b; });
+    renderBrandGrid();
+  }
+}
+
+function renderBrandGrid() {
+  const grid = document.getElementById('cctvBrandGrid');
+  grid.innerHTML = '';
+  Object.entries(CCTV_BRANDS).forEach(([id, b]) => {
+    const chip = document.createElement('div');
+    chip.className = 'brand-chip' + (id === cctvActiveBrand ? ' active' : '');
+    chip.textContent = b.name;
+    chip.title = b.template || 'Custom URL';
+    chip.onclick = () => selectBrand(id, chip);
+    grid.appendChild(chip);
+  });
+}
+
+function selectBrand(id, chipEl) {
+  cctvActiveBrand = id;
+  document.querySelectorAll('.brand-chip').forEach(c => c.classList.remove('active'));
+  if (chipEl) chipEl.classList.add('active');
+  const brand = CCTV_BRANDS[id];
+  if (brand && brand.default_port) document.getElementById('cctvPort').value = brand.default_port;
+  buildCCTVUrl();
+}
+
+function buildCCTVUrl() {
+  const brand = CCTV_BRANDS[cctvActiveBrand];
+  if (!brand || cctvActiveBrand === 'custom') return;
+  const ip   = document.getElementById('cctvIP').value.trim()   || '{ip}';
+  const port = document.getElementById('cctvPort').value.trim() || '554';
+  const user = document.getElementById('cctvUser').value.trim() || 'admin';
+  const pass = document.getElementById('cctvPass').value.trim() || '';
+  const ch   = document.getElementById('cctvCh').value.trim()   || '1';
+  let url = brand.template
+    .replace(/\{ip\}/g,      ip)
+    .replace(/\{port\}/g,    port)
+    .replace(/\{user\}/g,    encodeURIComponent(user))
+    .replace(/\{pass\}/g,    encodeURIComponent(pass))
+    .replace(/\{channel\}/g, ch);
+  document.getElementById('cctvUrlBox').value = url;
+}
+
+function toggleCustomUrl() {
+  cctvActiveBrand = 'custom';
+  document.querySelectorAll('.brand-chip').forEach(c => {
+    c.classList.toggle('active', c.textContent === 'Custom URL');
+  });
+  document.getElementById('cctvUrlBox').focus();
+}
+
+function _cctvFormData() {
+  const f = new FormData();
+  const ip   = document.getElementById('cctvIP').value.trim();
+  const port = document.getElementById('cctvPort').value.trim()  || '554';
+  const user = document.getElementById('cctvUser').value.trim()  || 'admin';
+  const pw   = document.getElementById('cctvPass').value.trim()  || '';
+  const ch   = document.getElementById('cctvCh').value.trim()    || '1';
+  const url  = document.getElementById('cctvUrlBox').value.trim();
+  f.append('rtsp_url', url);   f.append('brand_id', cctvActiveBrand);
+  f.append('brand',    cctvActiveBrand);
+  f.append('ip',       ip);    f.append('port',    port);
+  f.append('user',     user);  f.append('pw',      pw);
+  f.append('channel',  ch);
+  return f;
+}
+
+async function testCCTV() {
+  const url = document.getElementById('cctvUrlBox').value.trim();
+  if (!url || url.includes('{ip}')) { toast('⚠️ Fill in the IP address first'); return; }
+  const btn = document.getElementById('cctvTestBtn');
+  btn.disabled = true; btn.className = 'cctv-test-btn';
+  btn.innerHTML = '⏳ Testing all URL paths…';
+  setStatus('active', '🧪 Testing CCTV connection…');
+  try {
+    const r = await authFetch(`${API}/cctv/test`, { method: 'POST', body: _cctvFormData() });
+    const d = await r.json();
+    if (d.success) {
+      btn.className = 'cctv-test-btn success';
+      btn.innerHTML = `✅ Connected! (URL ${d.tried}/${d.total})`;
+      document.getElementById('cctvUrlBox').value = d.working_url;
+      setStatus('idle', `✅ Test passed — URL ${d.tried}/${d.total} works`);
+      toast(`✅ Working URL found (${d.tried}/${d.total} tried)`);
+    } else {
+      btn.className = 'cctv-test-btn fail';
+      btn.innerHTML = `❌ Failed (tried ${d.tried} URLs)`;
+      setStatus('idle', `❌ All ${d.tried} URL paths failed — check IP & credentials`);
+      toast(`⚠️ All ${d.tried} URLs failed — check IP/credentials`);
+    }
+  } catch(err) {
+    btn.className = 'cctv-test-btn fail'; btn.innerHTML = '❌ Test error';
+    toast('⚠️ ' + err.message);
+  } finally {
+    btn.disabled = false;
+    setTimeout(() => { btn.className = 'cctv-test-btn'; btn.innerHTML = '🧪 Test Connection'; }, 6000);
+  }
+}
+
+async function toggleCCTV() {
+  if (cctvConnected) {
+    await authFetch(`${API}/cctv/disconnect`, { method: 'POST' });
+    cctvConnected = false;
+    document.getElementById('cctvConnectBtn').textContent = '📡 Connect to CCTV';
+    document.getElementById('cctvConnectBtn').classList.remove('connected');
+    document.getElementById('cctvDot').className = 'cctv-dot';
+    document.getElementById('cctvStatusText').textContent = 'Disconnected';
+    document.getElementById('streamImg').src = '';
+    setStatus('idle', '📷 CCTV stream stopped.');
+    return;
+  }
+  const url = document.getElementById('cctvUrlBox').value.trim();
+  if (!url || url.includes('{ip}')) { toast('⚠️ Enter the camera IP address first'); return; }
+
+  try {
+    document.getElementById('cctvDot').className = 'cctv-dot connecting';
+    document.getElementById('cctvStatusText').textContent = 'Connecting…';
+    setStatus('active', '📡 Connecting — trying URL paths…');
+
+    const f = _cctvFormData();
+    f.append('label',               'CCTV');
+    f.append('prompt',              tags.map(t => t.label).join(','));
+    f.append('conf',                sliderVal('confSlider') / 100);
+    f.append('auto_screenshot',     document.getElementById('tglSS').checked);
+    f.append('save_crops',          document.getElementById('tglCrop').checked);
+    f.append('screenshot_cooldown', sliderVal('cooldownSlider'));
+    f.append('face_recognition',    document.getElementById('tglFace').checked);
+
+    const r = await authFetch(`${API}/cctv/connect`, { method: 'POST', body: f });
+    if (!r.ok) throw new Error('Connect failed ' + r.status);
+
+    cctvConnected = true;
+    showDisplay('stream');
+    const img  = document.getElementById('streamImg');
+    const ip   = document.getElementById('cctvIP').value.trim();
+    const port = document.getElementById('cctvPort').value.trim() || '554';
+    const user = document.getElementById('cctvUser').value.trim() || 'admin';
+    const pw   = document.getElementById('cctvPass').value.trim() || '';
+    const ch   = document.getElementById('cctvCh').value.trim()   || '1';
+    img.src = '';
+    img.src = `${API}/cctv_feed?ip=${encodeURIComponent(ip)}&port=${port}&user=${encodeURIComponent(user)}&pw=${encodeURIComponent(pw)}&channel=${ch}&token=${encodeURIComponent(_token)}&t=` + Date.now();
+    img.onerror = () => setStatus('idle','⚠️ Stream error — check URL/credentials');
+
+    const bname = CCTV_BRANDS[cctvActiveBrand]?.name || 'CCTV';
+    document.getElementById('cctvConnectBtn').innerHTML = '🔴 Disconnect';
+    document.getElementById('cctvConnectBtn').classList.add('connected');
+    document.getElementById('cctvDot').className = 'cctv-dot live';
+    document.getElementById('cctvStatusText').textContent = 'Auto-trying paths…';
+    setStatus('live', `🔴 ${bname} — trying URL paths, please wait…`);
+
+    let pollTries = 0;
+    const poll = setInterval(async () => {
+      pollTries++;
+      try {
+        const sr = await authFetch(`${API}/cctv/status`);
+        const sd = await sr.json();
+        if (sd.connected) {
+          const short = sd.rtsp_url?.length > 40 ? sd.rtsp_url.slice(0,40)+'…' : sd.rtsp_url;
+          document.getElementById('cctvStatusText').textContent = short;
+          setStatus('live', `🔴 ${bname} — Live`);
+          clearInterval(poll);
+        } else if (!sd.active || pollTries > 20) {
+          clearInterval(poll);
+          if (!sd.active) {
+            document.getElementById('cctvStatusText').textContent = 'Failed — all paths tried';
+            setStatus('idle', '❌ Could not connect — check IP & credentials');
+          }
+        }
+      } catch { clearInterval(poll); }
+    }, 1500);
+
+  } catch(err) {
+    toast('⚠️ ' + err.message);
+    setStatus('idle', 'CCTV connect failed');
+    document.getElementById('cctvDot').className = 'cctv-dot';
+    document.getElementById('cctvStatusText').textContent = 'Connection failed';
+    cctvConnected = false;
+  }
+}
+
+async function scanCCTV() {
+  const btn = document.getElementById('cctvScanBtn');
+  btn.disabled = true; btn.innerHTML = '⏳ Scanning network…';
+  document.getElementById('cctvScanResults').classList.remove('visible');
+  try {
+    const r = await authFetch(`${API}/cctv/scan`);
+    const d = await r.json();
+    const list  = document.getElementById('cctvScanList');
+    const count = document.getElementById('cctvScanCount');
+    list.innerHTML = '';
+    count.textContent = (d.found || []).length;
+    if (!d.found || !d.found.length) {
+      list.innerHTML = '<div style="padding:8px 10px;font-family:var(--fm);font-size:10px;color:var(--muted)">No cameras found on subnet ' + (d.subnet||'') + '</div>';
+    } else {
+      d.found.forEach(cam => {
+        const item = document.createElement('div');
+        item.className = 'scan-result-item';
+        item.innerHTML = `<span class="scan-result-ip">${cam.ip}</span><span class="scan-result-port">:${cam.port}</span>`;
+        item.onclick = () => {
+          document.getElementById('cctvIP').value = cam.ip;
+          document.getElementById('cctvPort').value = cam.port;
+          buildCCTVUrl();
+          toast(`✓ IP ${cam.ip} filled in`);
+        };
+        list.appendChild(item);
+      });
+    }
+    document.getElementById('cctvScanResults').classList.add('visible');
+  } catch(err) {
+    toast('⚠️ Scan failed: ' + err.message);
+  } finally {
+    btn.disabled = false; btn.innerHTML = '🔍 Auto-Detect on Network';
+  }
+}
+
+// ── File handling ─────────────────────────────────────────────────
+function triggerBrowse() { document.getElementById('fileInput').click(); }
+function onDragOver(e)   { e.preventDefault(); document.getElementById('uploadZone').classList.add('drag-over'); }
+function onDragLeave()   { document.getElementById('uploadZone').classList.remove('drag-over'); }
+function onDrop(e)       { e.preventDefault(); onDragLeave(); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }
+function onFileChosen(e) { const f = e.target.files[0]; if (f) handleFile(f); }
+
+function handleFile(file) {
+  lastDets = []; stableBoxes = {}; hideResults();
+  if (file.type.startsWith('image/') && mode === 'image') {
+    const img = new Image();
+    img.onload = () => { imageEl = img; showDisplay('canvas'); setStatus('idle', `${file.name} — add prompts and click Detect`); checkBtn(); };
+    img.onerror = () => toast('⚠️ Could not load image');
+    img.src = URL.createObjectURL(file);
+  } else if (file.type.startsWith('video/') && mode === 'video') {
+    lastVideoFile = file; doUploadVideo(file);
+  } else {
+    toast('⚠️ Wrong file type for current mode');
+  }
+}
+
+// ── Video upload ──────────────────────────────────────────────────
+function buildForm(extra) {
+  const f = new FormData();
+  f.append('prompt',              tags.map(t => t.label).join(','));
+  f.append('conf',                sliderVal('confSlider') / 100);
+  f.append('auto_screenshot',     document.getElementById('tglSS').checked);
+  f.append('save_crops',          document.getElementById('tglCrop').checked);
+  f.append('screenshot_cooldown', sliderVal('cooldownSlider'));
+  f.append('face_recognition',    document.getElementById('tglFace').checked);
+  if (extra) Object.entries(extra).forEach(([k,v]) => f.append(k,v));
+  return f;
+}
+
+function doUploadVideo(file) {
+  setStatus('active', '⏫ Uploading…');
+  const form = buildForm(); form.append('file', file);
+  authFetch(`${API}/upload_video`, { method: 'POST', body: form })
+    .then(r => {
+      if (!r.ok) throw new Error('Upload failed ' + r.status);
+      showDisplay('stream');
+      const img = document.getElementById('streamImg');
+      img.src = ''; img.src = `${API}/video_feed?token=${encodeURIComponent(_token)}&t=` + Date.now();
+      img.onerror = () => setStatus('idle', '⚠️ Stream error');
+      setStatus('live', '▶ Detecting persons + face matching…');
+      checkBtn();
+    })
+    .catch(err => { toast('⚠️ ' + err.message); setStatus('idle', 'Upload failed'); });
+}
+
+function startCamera() {
+  authFetch(`${API}/set_webcam_config`, { method: 'POST', body: buildForm() }).catch(() => {});
+  showDisplay('stream');
+  const img = document.getElementById('streamImg');
+  img.src = ''; img.src = `${API}/webcam_feed?token=${encodeURIComponent(_token)}&t=` + Date.now();
+  img.onerror = () => setStatus('idle', '⚠️ Camera error — check backend');
+  setStatus('live', '🔴 Live detection + face matching');
+  checkBtn();
+}
+
+// ── Detect button ─────────────────────────────────────────────────
+async function runDetect() {
+  if (mode === 'video') { if (!lastVideoFile) { toast('⚠️ Please re-select the video file'); return; } doUploadVideo(lastVideoFile); return; }
+  if (mode === 'live')  { startCamera(); return; }
+  if (!imageEl)         { toast('⚠️ Load an image first'); return; }
+  if (isDetecting) return;
+  isDetecting = true;
+  setStatus('active', 'Detecting…');
+
+  const snap = document.createElement('canvas');
+  snap.width  = imageEl.naturalWidth;
+  snap.height = imageEl.naturalHeight;
+  snap.getContext('2d').drawImage(imageEl, 0, 0);
+
+  try {
+    const blob = await new Promise(res => snap.toBlob(res, 'image/jpeg', 0.9));
+    const form = buildForm({ max_det: sliderVal('maxSlider') });
+    form.set('confidence', sliderVal('confSlider') / 100);
+    form.append('file', blob, 'frame.jpg');
+
+    const res  = await authFetch(`${API}/detect`, { method: 'POST', body: form });
+    if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || 'HTTP ' + res.status); }
+    const data = await res.json();
+
+    lastDets = data.detections || [];
+    stableBoxes = {};
+
+    const confMin = sliderVal('confSlider') / 100;
+    const visible = lastDets.filter(d => d.confidence >= confMin);
+    showResults(visible);
+
+    const tf = data.targets_found || 0;
+    const ss = data.screenshots_saved || 0;
+    setStatus('idle', `${visible.length} object${visible.length!==1?'s':''} detected · ${tf} target match${tf!==1?'es':''} · ${ss} saved`);
+
+    if (tf > 0) {
+      targetMatchCount += tf;
+      const tb = document.getElementById('targetBadge');
+      tb.textContent = `🎯 ${targetMatchCount} match${targetMatchCount!==1?'es':''}`;
+      tb.classList.add('vis');
+      const tbb = document.getElementById('targetTabBadge');
+      tbb.textContent = targetMatchCount; tbb.classList.add('vis');
+    }
+  } catch(err) {
+    toast('⚠️ ' + err.message);
+    setStatus('idle', 'Detection failed');
+  } finally {
+    isDetecting = false; checkBtn();
+  }
+}
+
+// ── Results panel ─────────────────────────────────────────────────
+function showResults(dets) {
+  const panel = document.getElementById('resultsPanel');
+  const list  = document.getElementById('resultsList');
+  const badge = document.getElementById('statusBadge');
+  panel.style.display = dets.length ? 'block' : 'none';
+  list.innerHTML = '';
+  dets.forEach(d => {
+    const c = document.createElement('span');
+    c.className = 'result-chip' + (d.matched_target ? ' is-target' : '');
+    if (!d.matched_target) c.style.background = labelColor(d.label);
+    c.innerHTML = `${d.matched_target ? '★ ' : ''}${d.label} <span class="rconf">${Math.round(d.confidence * 100)}%</span>`;
+    list.appendChild(c);
+  });
+  badge.textContent   = `${dets.length} obj`;
+  badge.style.display = dets.length ? 'inline-flex' : 'none';
+}
+function hideResults() {
+  document.getElementById('resultsPanel').style.display = 'none';
+  document.getElementById('statusBadge').style.display  = 'none';
+  document.getElementById('resultsList').innerHTML = '';
+}
+
+// ── Tags ──────────────────────────────────────────────────────────
+function addTag() {
+  const inp = document.getElementById('promptInput');
+  const val = inp.value.trim(); if (!val) return;
+  val.split(',').map(s => s.trim()).filter(Boolean).forEach(p => {
+    if (!tags.find(t => t.label === p)) { tags.push({ label: p, color: PALETTE[tagColorIdx % PALETTE.length] }); tagColorIdx++; }
+  });
+  inp.value = ''; renderTags(); checkBtn();
+}
+function removeTag(i) { tags.splice(i, 1); renderTags(); checkBtn(); }
+function renderTags() {
+  const w = document.getElementById('tagsWrap'); w.innerHTML = '';
+  tags.forEach((t, i) => {
+    const el = document.createElement('div');
+    el.className = 'tag'; el.style.background = t.color;
+    el.innerHTML = `${t.label} <span class="tag-x" onclick="removeTag(${i})">✕</span>`;
+    w.appendChild(el);
+  });
+}
+function setQuick(prompt) { document.getElementById('promptInput').value = prompt; addTag(); toast('✓ Prompts added'); }
+
+// ── Helpers ───────────────────────────────────────────────────────
+function sliderVal(id) { return parseInt(document.getElementById(id).value); }
+function checkBtn() {
+  const btn = document.getElementById('detectBtn');
+  if (mode === 'cctv') { btn.disabled = true; return; }
+  const ok  = mode === 'live' || mode === 'video' || imageEl !== null;
+  btn.disabled = !ok;
+  btn.textContent = mode === 'live' ? '⚡ Restart Detection' : mode === 'video' ? '⚡ Re-Detect Video' : '⚡ Detect Objects';
+}
+function setStatus(state, text) {
+  document.getElementById('statusText').textContent = text;
+  const dot = document.getElementById('statusDot');
+  dot.className = 'status-dot' + (state === 'active' ? ' active' : state === 'live' ? ' live' : '');
+}
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+</script>
+
+<!-- Razorpay SDK (loaded lazily when upgrade is clicked) -->
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+</body>
+</html>

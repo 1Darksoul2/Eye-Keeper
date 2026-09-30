@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>EyeKeeper — See Everything. Miss Nothing.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+<style>
+:root{--bg:#05080f;--bg2:#090d18;--bg3:#0f1626;--border:rgba(255,255,255,.06);--border2:rgba(255,255,255,.11);--text:#dde3f0;--muted:#5a6478;--accent:#4af0c4;--acc2:#2563ff;--acc3:#ff3d6e;--glow:rgba(74,240,196,.12);--fd:'Syne',sans-serif;--fb:'DM Sans',sans-serif;--fm:'JetBrains Mono',monospace}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--fb);font-weight:300;overflow-x:hidden;cursor:none}
+#cur{position:fixed;width:8px;height:8px;background:var(--accent);border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);transition:width .18s,height .18s;mix-blend-mode:difference}
+#cur-ring{position:fixed;width:32px;height:32px;border:1px solid rgba(74,240,196,.4);border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:width .25s,height .25s}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 52px;height:62px;border-bottom:1px solid var(--border);background:rgba(5,8,15,.85);backdrop-filter:blur(24px)}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--text)}
+.logo-mark{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--acc2));display:grid;place-items:center;font-size:16px;flex-shrink:0;box-shadow:0 0 20px rgba(74,240,196,.25)}
+.logo-name{font-family:var(--fd);font-weight:800;font-size:18px;letter-spacing:-.5px}
+.logo-name span{color:var(--accent)}
+.nav-links{display:flex;align-items:center;gap:30px;list-style:none}
+.nav-links a{color:var(--muted);text-decoration:none;font-size:14px;transition:color .2s}
+.nav-links a:hover{color:var(--text)}
+.playground-btn{padding:8px 22px;background:var(--accent);color:#000 !important;font-weight:600;font-size:13px;border-radius:8px;transition:all .2s;box-shadow:0 0 20px rgba(74,240,196,.2)}
+.playground-btn:hover{box-shadow:0 0 40px rgba(74,240,196,.4) !important;transform:translateY(-1px)}
+
+/* HERO */
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:120px 24px 60px;position:relative;overflow:hidden}
+.hgrid{position:absolute;inset:0;background-image:linear-gradient(rgba(74,240,196,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(74,240,196,.03) 1px,transparent 1px);background-size:56px 56px;mask-image:radial-gradient(ellipse 80% 80% at 50% 50%,black,transparent);animation:gdrift 25s linear infinite}
+@keyframes gdrift{to{background-position:56px 56px}}
+.hero-eye{position:absolute;width:700px;height:700px;background:radial-gradient(circle,rgba(74,240,196,.07) 0%,transparent 65%);top:50%;left:50%;transform:translate(-50%,-52%);pointer-events:none}
+.hero-eye2{position:absolute;width:350px;height:350px;background:radial-gradient(circle,rgba(37,99,255,.06) 0%,transparent 70%);bottom:5%;right:8%;pointer-events:none}
+.h-badge{display:inline-flex;align-items:center;gap:8px;padding:5px 14px;background:rgba(74,240,196,.07);border:1px solid rgba(74,240,196,.18);border-radius:100px;font-family:var(--fm);font-size:11px;color:var(--accent);margin-bottom:30px;animation:fup .5s ease both}
+.bdot{width:5px;height:5px;background:var(--accent);border-radius:50%;animation:pulse 2s ease infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.7)}}
+.hero h1{font-family:var(--fd);font-size:clamp(50px,9vw,100px);font-weight:800;line-height:.97;letter-spacing:-4px;margin-bottom:12px;animation:fup .6s .08s ease both}
+.ek{background:linear-gradient(120deg,var(--accent) 0%,#7af8da 50%,var(--acc2) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-tagline{font-family:var(--fd);font-size:clamp(16px,2.5vw,22px);font-weight:400;color:var(--muted);letter-spacing:-.5px;margin-bottom:28px;animation:fup .6s .14s ease both}
+.hero-tagline em{font-style:italic;color:rgba(221,227,240,.45)}
+.hero-desc{font-size:16px;color:var(--muted);max-width:500px;line-height:1.7;margin-bottom:44px;animation:fup .6s .2s ease both}
+.hero-pills{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:44px;animation:fup .6s .26s ease both}
+.pill{padding:7px 15px;border:1px solid var(--border2);border-radius:100px;font-size:12px;color:var(--muted);background:rgba(255,255,255,.02);font-family:var(--fm);cursor:pointer;transition:all .2s}
+.pill:hover{border-color:var(--accent);color:var(--accent);background:rgba(74,240,196,.06);transform:translateY(-2px)}
+.hero-ctas{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;animation:fup .6s .32s ease both}
+.btn-p{padding:13px 30px;background:var(--accent);color:#000;font-weight:700;font-size:14px;border-radius:9px;text-decoration:none;display:inline-flex;align-items:center;gap:8px;transition:all .2s;box-shadow:0 0 30px rgba(74,240,196,.22)}
+.btn-p:hover{transform:translateY(-2px);box-shadow:0 0 55px rgba(74,240,196,.38)}
+.btn-s{padding:13px 30px;background:transparent;color:var(--text);font-size:14px;border:1px solid var(--border2);border-radius:9px;text-decoration:none;display:inline-flex;align-items:center;gap:8px;transition:all .2s}
+.btn-s:hover{border-color:rgba(255,255,255,.25);background:rgba(255,255,255,.03);transform:translateY(-2px)}
+@keyframes fup{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+/* DEMO WINDOW */
+.demo-wrap{padding:20px 24px 100px;display:flex;justify-content:center}
+.demo-win{width:100%;max-width:920px;border-radius:18px;overflow:hidden;border:1px solid var(--border2);background:var(--bg2);box-shadow:0 50px 130px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.04);animation:fup .8s .4s ease both}
+.winbar{height:42px;background:var(--bg3);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 14px;gap:8px}
+.dot{width:11px;height:11px;border-radius:50%}
+.dr{background:#ff5f57}.dy{background:#febc2e}.dg{background:#28c840}
+.wintitle{flex:1;text-align:center;font-family:var(--fm);font-size:11px;color:var(--muted)}
+.vframe{position:relative;aspect-ratio:16/9;overflow:hidden;background:#000}
+.vbg{width:100%;height:100%;position:relative;background:linear-gradient(180deg,#111d2e 0%,#0a1220 45%,#0d1620 100%)}
+.vgrid{position:absolute;inset:0;background-image:linear-gradient(rgba(74,240,196,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(74,240,196,.025) 1px,transparent 1px);background-size:38px 38px;pointer-events:none}
+.scanline{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(74,240,196,.5),transparent);animation:scan 3.5s ease-in-out infinite}
+@keyframes scan{0%{top:0%;opacity:1}100%{top:100%;opacity:.1}}
+.bracket{position:absolute;width:18px;height:18px;border-color:rgba(74,240,196,.35);border-style:solid}
+.btl{top:10px;left:10px;border-width:2px 0 0 2px}.btr{top:10px;right:10px;border-width:2px 2px 0 0}
+.bbl{bottom:58px;left:10px;border-width:0 0 2px 2px}.bbr{bottom:58px;right:10px;border-width:0 2px 2px 0}
+.vhud{position:absolute;top:10px;left:12px;font-family:var(--fm);font-size:10px;color:var(--accent);line-height:2}
+.det-boxes{position:absolute;inset:0}
+.dbox{position:absolute;border:2px solid;border-radius:2px;animation:bpop .25s ease both}
+@keyframes bpop{from{opacity:0;transform:scale(.93)}to{opacity:1;transform:scale(1)}}
+.dlbl{position:absolute;top:-25px;left:-2px;padding:2px 7px;font-family:var(--fm);font-size:10px;color:#000;border-radius:3px 3px 3px 0;white-space:nowrap;font-weight:600}
+.vpanel{position:absolute;bottom:8px;left:8px;right:8px;background:rgba(255,255,255,.96);border-radius:12px;padding:10px 12px 9px;box-shadow:0 8px 40px rgba(0,0,0,.5)}
+.vinrow{display:flex;gap:7px;margin-bottom:9px}
+.vinput{flex:1;background:#f0f2f5;border:1px solid #e0e3e8;border-radius:7px;padding:7px 11px;font-family:var(--fb);font-size:12px;color:#888;outline:none}
+.vadd{background:#16a34a;color:#fff;border:none;border-radius:7px;padding:7px 16px;font-weight:700;font-size:12px;cursor:pointer}
+.vchips{display:flex;flex-wrap:wrap;gap:5px}
+.vchip{padding:4px 11px;border-radius:100px;font-size:11px;font-weight:600;color:#fff;cursor:pointer;transition:all .15s;user-select:none}
+.vchip:hover{opacity:.8;transform:translateY(-1px)}
+.co{background:#ea580c}.cg{background:#16a34a}.cp{background:#db2777}.cb{background:#2563eb}.ct{background:#0891b2}
+
+/* STATS */
+.stats{border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:36px 24px;display:flex;justify-content:center;background:var(--bg2)}
+.stats-in{display:flex;gap:72px;flex-wrap:wrap;justify-content:center}
+.stat{text-align:center}
+.snum{font-family:var(--fd);font-size:46px;font-weight:800;color:var(--accent);line-height:1;letter-spacing:-3px}
+.slbl{font-size:12px;color:var(--muted);margin-top:6px;font-family:var(--fm)}
+
+/* SECTIONS */
+.sec{padding:110px 24px;max-width:1080px;margin:0 auto}
+.slabel{font-family:var(--fm);font-size:11px;color:var(--accent);letter-spacing:2.5px;text-transform:uppercase;margin-bottom:14px}
+.stitle{font-family:var(--fd);font-size:clamp(30px,5vw,52px);font-weight:800;letter-spacing:-2px;line-height:1.05;margin-bottom:18px}
+.sdesc{color:var(--muted);font-size:16px;line-height:1.7;max-width:520px}
+
+/* STEPS */
+.steps{display:grid;grid-template-columns:repeat(3,1fr);margin-top:60px;border:1px solid var(--border);border-radius:18px;overflow:hidden}
+.step{padding:40px 34px;background:var(--bg2);border-right:1px solid var(--border);position:relative;overflow:hidden;transition:background .3s}
+.step:last-child{border-right:none}
+.step::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,var(--glow),transparent);opacity:0;transition:opacity .3s}
+.step:hover::before{opacity:1}
+.sn2{font-family:var(--fm);font-size:10px;color:var(--accent);letter-spacing:1px;margin-bottom:18px}
+.sico{font-size:30px;display:block;margin-bottom:18px}
+.step h3{font-family:var(--fd);font-size:19px;font-weight:700;margin-bottom:10px}
+.step p{color:var(--muted);font-size:13px;line-height:1.75}
+
+/* PROMPTS */
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;margin-top:54px}
+.pcard{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:22px;cursor:pointer;transition:all .25s;position:relative;overflow:hidden}
+.pcard::after{content:'';position:absolute;inset:0;border-radius:14px;border:1px solid var(--accent);opacity:0;transition:opacity .25s}
+.pcard:hover{transform:translateY(-4px);background:var(--bg3);box-shadow:0 24px 60px rgba(0,0,0,.4)}
+.pcard:hover::after{opacity:1}
+.pemo{font-size:26px;margin-bottom:12px;display:block}
+.pinput{font-family:var(--fm);font-size:12px;color:var(--accent);margin-bottom:7px}
+.pexp{font-size:11px;color:var(--muted);line-height:1.7}
+.pexp span{display:inline-block;background:rgba(255,255,255,.04);border:1px solid var(--border2);border-radius:3px;padding:1px 5px;margin:2px 2px 0 0}
+
+/* CODE */
+.codesec{padding:0 24px 110px;background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.code-in{max-width:1080px;margin:0 auto;padding:110px 0;display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center}
+.ctabs{display:flex;gap:3px;background:var(--bg);padding:4px;border-radius:9px 9px 0 0;border:1px solid var(--border);border-bottom:none}
+.ctab{padding:6px 15px;border-radius:6px;font-family:var(--fm);font-size:11px;cursor:pointer;border:none;background:transparent;color:var(--muted);transition:all .2s}
+.ctab.on{background:var(--bg3);color:var(--text)}
+.cblock{background:var(--bg);border:1px solid var(--border);border-top:none;border-radius:0 0 11px 11px;padding:22px;overflow-x:auto;display:none}
+.cblock.on{display:block}
+.cblock pre{font-family:var(--fm);font-size:12px;line-height:1.9;color:#8899b0}
+.kw{color:#c792ea}.fn{color:#82aaff}.str{color:#c3e88d}.cm{color:#455060}.var{color:#89ddff}
+
+/* FEATURES */
+.fgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:54px}
+.fcard{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:30px;transition:all .25s}
+.fcard:hover{border-color:var(--border2);transform:translateY(-3px)}
+.fcard.wide{grid-column:span 2;display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center}
+.fico{width:44px;height:44px;border-radius:10px;display:grid;place-items:center;font-size:20px;margin-bottom:18px;background:rgba(74,240,196,.08);border:1px solid rgba(74,240,196,.15)}
+.fcard h3{font-family:var(--fd);font-size:18px;font-weight:700;margin-bottom:9px}
+.fcard p{color:var(--muted);font-size:13px;line-height:1.75}
+.mtable{width:100%;border-collapse:collapse;margin-top:14px}
+.mtable th{text-align:left;font-family:var(--fm);font-size:10px;color:var(--muted);letter-spacing:1px;padding:7px 10px;border-bottom:1px solid var(--border)}
+.mtable td{padding:9px 10px;font-size:12px;border-bottom:1px solid var(--border);color:var(--text)}
+.mtable td:first-child{font-family:var(--fm);color:var(--accent)}
+.sbar{display:flex;gap:3px}
+.sd{width:7px;height:7px;border-radius:50%;background:var(--border2)}
+.sd.on{background:var(--accent)}
+
+/* ── PRICING ── */
+.pricing-sec { padding: 110px 24px; background: var(--bg2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.pricing-inner { max-width: 1080px; margin: 0 auto; }
+.plan-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 56px; }
+.plan-box {
+  background: var(--bg3); border: 1px solid var(--border); border-radius: 18px;
+  padding: 30px 26px; position: relative; overflow: hidden; transition: all .25s;
+}
+.plan-box:hover { transform: translateY(-5px); border-color: var(--border2); box-shadow: 0 30px 70px rgba(0,0,0,.4); }
+.plan-box.popular { border-color: rgba(74,240,196,.35); background: rgba(74,240,196,.03); }
+.plan-box.popular::before {
+  content: 'POPULAR'; position: absolute; top: 16px; right: -28px;
+  background: var(--accent); color: #000; font-family: var(--fm); font-size: 9px;
+  font-weight: 700; letter-spacing: 1.5px; padding: 4px 38px;
+  transform: rotate(45deg); transform-origin: center;
+}
+.plan-tier { font-family: var(--fm); font-size: 10px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
+.plan-title { font-family: var(--fd); font-size: 24px; font-weight: 800; margin-bottom: 6px; }
+.plan-amount { font-family: var(--fd); font-size: 42px; font-weight: 800; color: var(--accent); letter-spacing: -2px; line-height: 1; }
+.plan-amount sup { font-size: 20px; vertical-align: top; margin-top: 8px; display: inline-block; }
+.plan-amount sub { font-size: 14px; color: var(--muted); font-family: var(--fb); font-weight: 300; }
+.plan-sep { height: 1px; background: var(--border); margin: 22px 0; }
+.plan-feats { list-style: none; display: flex; flex-direction: column; gap: 9px; margin-bottom: 28px; }
+.plan-feats li { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; color: var(--muted); }
+.plan-feats li::before { content: '✓'; color: var(--accent); font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+.plan-btn {
+  display: block; width: 100%; padding: 13px; text-align: center;
+  background: transparent; border: 1px solid var(--border2); border-radius: 9px;
+  color: var(--text); font-family: var(--fb); font-size: 14px; font-weight: 600;
+  cursor: pointer; text-decoration: none; transition: all .2s;
+}
+.plan-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(74,240,196,.06); }
+.plan-box.popular .plan-btn {
+  background: var(--accent); color: #000; border-color: var(--accent);
+  box-shadow: 0 0 30px rgba(74,240,196,.25);
+}
+.plan-box.popular .plan-btn:hover { box-shadow: 0 0 50px rgba(74,240,196,.45); transform: translateY(-1px); }
+@media(max-width:860px) { .plan-grid { grid-template-columns: 1fr; } }
+
+/* CTA */
+.ctasec{padding:110px 24px;text-align:center;position:relative;overflow:hidden}
+.ctaglow{position:absolute;width:700px;height:400px;background:radial-gradient(circle,rgba(74,240,196,.08) 0%,transparent 70%);top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none}
+.ctasec h2{font-family:var(--fd);font-size:clamp(34px,6vw,64px);font-weight:800;letter-spacing:-3px;margin-bottom:18px;line-height:1.0}
+.ctasec p{color:var(--muted);font-size:17px;margin-bottom:38px}
+
+/* FOOTER */
+footer{border-top:1px solid var(--border);padding:52px 52px 32px;display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;gap:48px}
+.fbrand p{color:var(--muted);font-size:13px;line-height:1.7;margin-top:10px;max-width:210px}
+.fcol h4{font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:16px}
+.fcol a{display:block;color:var(--muted);text-decoration:none;font-size:13px;margin-bottom:10px;transition:color .2s}
+.fcol a:hover{color:var(--text)}
+.fbot{border-top:1px solid var(--border);padding:18px 52px;display:flex;justify-content:space-between;align-items:center}
+.fbot p{color:var(--muted);font-size:12px}
+.reveal{opacity:0;transform:translateY(28px);transition:opacity .7s ease,transform .7s ease}
+.reveal.visible{opacity:1;transform:translateY(0)}
+
+@media(max-width:860px){
+  nav{padding:0 20px}
+  .steps{grid-template-columns:1fr}
+  .step{border-right:none;border-bottom:1px solid var(--border)}
+  .code-in{grid-template-columns:1fr;gap:36px}
+  .fgrid{grid-template-columns:1fr}
+  .fcard.wide{grid-column:span 1;grid-template-columns:1fr}
+  footer{grid-template-columns:1fr 1fr;gap:32px}
+  .fbot{flex-direction:column;gap:6px;text-align:center}
+  .nav-links{display:none}
+  .stats-in{gap:32px}
+}
+</style>
+</head>
+<body>
+<div id="cur"></div>
+<div id="cur-ring"></div>
+
+<!-- NAV -->
+<nav>
+  <a href="/" class="logo">
+    <div class="logo-mark">👁</div>
+    <span class="logo-name">Eye<span>Keeper</span></span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#how">How it works</a></li>
+    <li><a href="#prompts">Prompts</a></li>
+    <li><a href="#pricing">Pricing</a></li>
+    <li><a href="#install">Install</a></li>
+    <li><a id="navPlayBtn" href="/login" class="playground-btn">🎮 Playground</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hgrid"></div>
+  <div class="hero-eye"></div>
+  <div class="hero-eye2"></div>
+  <div class="h-badge"><div class="bdot"></div>Zero-Shot · No Training · No API Key</div>
+  <h1><span class="ek">Eye</span>Keeper</h1>
+  <p class="hero-tagline">See everything. <em>Miss nothing.</em></p>
+  <p class="hero-desc">Type what you want to detect in plain English. EyeKeeper maps your words to precise detections on any image or video — instantly, locally, privately.</p>
+  <div class="hero-pills">
+    <div class="pill" onclick="setDemo('dangerous items')">⚠️ dangerous items</div>
+    <div class="pill" onclick="setDemo('ppe')">👷 ppe</div>
+    <div class="pill" onclick="setDemo('someone using a phone')">📱 someone using a phone</div>
+    <div class="pill" onclick="setDemo('kids playing')">👧 kids playing</div>
+    <div class="pill" onclick="setDemo('vehicle')">🚗 vehicle</div>
+    <div class="pill" onclick="setDemo('fire hazard')">🔥 fire hazard</div>
+  </div>
+  <div class="hero-ctas">
+    <a id="heroPlayBtn" href="/login" class="btn-p">🎮 Open Playground</a>
+    <a href="#how" class="btn-s">See how it works →</a>
+  </div>
+</section>
+
+<!-- DEMO WINDOW -->
+<div class="demo-wrap">
+  <div class="demo-win">
+    <div class="winbar">
+      <div class="dot dr"></div><div class="dot dy"></div><div class="dot dg"></div>
+      <div class="wintitle">EyeKeeper — Live Demo</div>
+    </div>
+    <div class="vframe">
+      <div class="vbg" id="liveVideoContainer">
+        <div class="vgrid"></div>
+        <div class="scanline"></div>
+        <div class="bracket btl"></div><div class="bracket btr"></div>
+        <div class="bracket bbl"></div><div class="bracket bbr"></div>
+        <div class="vhud" id="liveHUD">FPS 30<br>STATUS: DEMO<br>READY</div>
+        <div class="det-boxes" id="liveDetections"></div>
+      </div>
+      <div class="vpanel">
+        <div class="vinrow">
+          <input class="vinput" placeholder="Type anything to detect..." id="livePrompt"/>
+          <button class="vadd" onclick="sendLivePrompt()">Detect</button>
+        </div>
+        <div class="vchips" id="liveChips">
+          <div class="vchip cb" onclick="setPrompt('walk sign')">walk sign</div>
+          <div class="vchip co" onclick="setPrompt('traffic cone')">traffic cone</div>
+          <div class="vchip cg" onclick="setPrompt('safety vest')">safety vest</div>
+          <div class="vchip cp" onclick="setPrompt('hardhat')">hardhat</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- STATS -->
+<div class="stats">
+  <div class="stats-in">
+    <div class="stat"><div class="snum">0ms</div><div class="slbl">setup time</div></div>
+    <div class="stat"><div class="snum">30+</div><div class="slbl">fps on T4 GPU</div></div>
+    <div class="stat"><div class="snum">∞</div><div class="slbl">object categories</div></div>
+    <div class="stat"><div class="snum">1</div><div class="slbl">Python file</div></div>
+  </div>
+</div>
+
+<!-- HOW IT WORKS -->
+<section class="sec reveal" id="how">
+  <div class="slabel">How it works</div>
+  <h2 class="stitle">From words<br/>to detections</h2>
+  <p class="sdesc">Three steps. No training data, no labelling, no cloud, no API key.</p>
+  <div class="steps">
+    <div class="step"><div class="sn2">01 / TYPE</div><span class="sico">✍️</span><h3>Plain English input</h3><p>Type anything while the video plays — literal terms like "car" or vague concepts like "dangerous items" or "someone using a phone". EyeKeeper figures out the rest.</p></div>
+    <div class="step"><div class="sn2">02 / THINK</div><span class="sico">🧠</span><h3>Semantic expansion</h3><p>A sentence-transformer model maps your prompt to precise, detectable terms using embedding similarity and a curated concept taxonomy. No prompt engineering needed.</p></div>
+    <div class="step"><div class="sn2">03 / SEE</div><span class="sico">🎯</span><h3>Zero-shot detection</h3><p>YOLO-World detects objects instantly — no retraining ever. Bounding boxes update the moment you press Enter, while the video keeps running.</p></div>
+  </div>
+</section>
+
+<!-- PROMPTS -->
+<section class="reveal" id="prompts" style="padding:0 24px 110px">
+  <div style="max-width:1080px;margin:0 auto">
+    <div class="slabel">Smart prompts</div>
+    <h2 class="stitle">Say it how<br/>you think it</h2>
+    <p class="sdesc">EyeKeeper understands vague, high-level language and expands it to what the model can detect.</p>
+    <div class="pgrid">
+      <div class="pcard" onclick="setPrompt('dangerous items')"><span class="pemo">⚠️</span><div class="pinput">"dangerous items"</div><div class="pexp">→ <span>knife</span><span>gun</span><span>weapon</span><span>scissors</span><span>axe</span><span>bat</span></div></div>
+      <div class="pcard" onclick="setPrompt('ppe')"><span class="pemo">👷</span><div class="pinput">"ppe"</div><div class="pexp">→ <span>helmet</span><span>hard hat</span><span>safety vest</span><span>gloves</span><span>face mask</span></div></div>
+      <div class="pcard" onclick="setPrompt('someone using a phone')"><span class="pemo">📱</span><div class="pinput">"someone using a phone"</div><div class="pexp">→ <span>person holding phone</span><span>cell phone</span><span>smartphone</span></div></div>
+      <div class="pcard" onclick="setPrompt('kids playing')"><span class="pemo">👧</span><div class="pinput">"kids playing"</div><div class="pexp">→ <span>child</span><span>ball</span><span>bicycle</span><span>scooter</span><span>toy</span></div></div>
+      <div class="pcard" onclick="setPrompt('fire hazard')"><span class="pemo">🔥</span><div class="pinput">"fire hazard"</div><div class="pexp">→ <span>fire</span><span>smoke</span><span>flames</span></div></div>
+      <div class="pcard" onclick="setPrompt('medical emergency')"><span class="pemo">🚑</span><div class="pinput">"medical emergency"</div><div class="pexp">→ <span>person lying on ground</span><span>wheelchair</span><span>ambulance</span></div></div>
+      <div class="pcard" onclick="setPrompt('vehicle')"><span class="pemo">🚗</span><div class="pinput">"vehicle"</div><div class="pexp">→ <span>car</span><span>truck</span><span>motorcycle</span><span>bus</span><span>bicycle</span><span>van</span></div></div>
+      <div class="pcard" onclick="setPrompt('construction site')"><span class="pemo">🏗️</span><div class="pinput">"construction site"</div><div class="pexp">→ <span>hard hat</span><span>safety vest</span><span>crane</span><span>excavator</span><span>worker</span></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- CODE -->
+<section class="codesec reveal" id="install">
+  <div class="code-in">
+    <div>
+      <div class="slabel">Install &amp; Run</div>
+      <h2 class="stitle">Up in 60<br/>seconds</h2>
+      <p class="sdesc" style="margin-bottom:28px">Clone, install, and run. EyeKeeper starts serving on localhost:8000 with zero config.</p>
+    </div>
+    <div>
+      <div class="ctabs">
+        <button class="ctab on" onclick="stab('setup',this)">Setup</button>
+        <button class="ctab"    onclick="stab('video',this)">Video</button>
+        <button class="ctab"    onclick="stab('image',this)">Image</button>
+        <button class="ctab"    onclick="stab('webcam',this)">Webcam</button>
+      </div>
+      <div class="cblock on" id="ctab-setup"><pre>
+<span class="cm"># clone + install</span>
+git clone https://github.com/you/eyekeeper
+pip install -r requirements.txt
+
+<span class="cm"># copy and configure env</span>
+cp .env.example .env
+<span class="cm"># edit .env with your keys</span>
+
+<span class="cm"># start the server</span>
+<span class="kw">python</span> <span class="fn">app.py</span>
+<span class="cm"># → open http://localhost:8000</span></pre></div>
+      <div class="cblock" id="ctab-video"><pre><span class="cm"># run on a video file</span>
+<span class="cm"># open playground, select Video mode</span>
+<span class="str">> person, car</span>
+<span class="str">> dangerous items</span>
+<span class="str">> ppe</span>
+<span class="str">> someone using a phone</span>
+<span class="cm"># press Enter to update detection instantly</span></pre></div>
+      <div class="cblock" id="ctab-image"><pre><span class="cm"># run on an image</span>
+<span class="cm"># open playground, select Image mode</span>
+<span class="cm"># type what to detect, press Enter</span>
+<span class="str">> car, number plate</span>
+<span class="str">> fire hazard</span>
+<span class="str">> kids playing</span></pre></div>
+      <div class="cblock" id="ctab-webcam"><pre><span class="cm"># run on webcam (Live mode)</span>
+<span class="cm"># open playground, select Live mode</span>
+<span class="cm"># type while camera runs live:</span>
+<span class="str">> person</span>
+<span class="str">> someone using a phone</span>
+<span class="str">> suspicious behavior</span></pre></div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="sec reveal">
+  <div class="slabel">Features</div>
+  <h2 class="stitle">Built for real use</h2>
+  <div class="fgrid">
+    <div class="fcard"><div class="fico">🧠</div><h3>Semantic expansion</h3><p>Sentence-transformer embeddings map vague prompts to concrete YOLO terms. Falls back to curated taxonomy matching if embeddings aren't installed — vague prompts still work either way.</p></div>
+    <div class="fcard"><div class="fico">🔬</div><h3>Small object detection</h3><p>SAHI-style sliced inference divides frames into overlapping tiles, catching small objects full-frame passes miss entirely. Cross-tile NMS removes duplicates cleanly.</p></div>
+    <div class="fcard"><div class="fico">🔄</div><h3>Temporal tracking</h3><p>IoU-based tracker propagates bounding boxes between inference frames. No flickering — smooth, stable boxes even at high frame-skip values on slower hardware.</p></div>
+    <div class="fcard"><div class="fico">⚡</div><h3>Adaptive frame skip</h3><p>Automatically adjusts inference frequency based on real-time GPU latency. Maxes out fast GPUs, stays watchable on CPU.</p></div>
+    <div class="fcard wide">
+      <div><div class="fico">🚀</div><h3>Three detection modes</h3><p>Switch at runtime by pressing M. Fast for live webcam, Balanced for general video, Thorough for maximum accuracy on images or slow-moving scenes.</p></div>
+      <table class="mtable">
+        <thead><tr><th>Mode</th><th>Speed</th><th>Accuracy</th><th>Best for</th></tr></thead>
+        <tbody>
+          <tr><td>fast</td><td><div class="sbar"><div class="sd on"></div><div class="sd on"></div><div class="sd on"></div></div></td><td>★★☆</td><td>Webcam / realtime</td></tr>
+          <tr><td>balanced</td><td><div class="sbar"><div class="sd on"></div><div class="sd on"></div><div class="sd"></div></div></td><td>★★★</td><td>General video</td></tr>
+          <tr><td>thorough</td><td><div class="sbar"><div class="sd on"></div><div class="sd"></div><div class="sd"></div></div></td><td>★★★+</td><td>Images / inspection</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="pricing-sec reveal" id="pricing">
+  <div class="pricing-inner">
+    <div class="slabel">Pricing</div>
+    <h2 class="stitle">Simple, transparent<br/>pricing</h2>
+    <p class="sdesc">Choose a plan that fits your needs. All plans include the full EyeKeeper AI detection engine.</p>
+
+    <div class="plan-grid">
+      <!-- Starter -->
+      <div class="plan-box">
+        <div class="plan-tier">Starter</div>
+        <div class="plan-title">Starter</div>
+        <div class="plan-amount"><sup>₹</sup>499<sub>/mo</sub></div>
+        <div class="plan-sep"></div>
+        <ul class="plan-feats">
+          <li>Image detection</li>
+          <li>Video file detection</li>
+          <li>100 screenshots / month</li>
+          <li>Person + face detection</li>
+          <li>Detection log</li>
+        </ul>
+        <a href="/login" class="plan-btn" id="starterBtn">Get Started →</a>
+      </div>
+
+      <!-- Pro (highlighted) -->
+      <div class="plan-box popular">
+        <div class="plan-tier">Most Popular</div>
+        <div class="plan-title">Pro</div>
+        <div class="plan-amount"><sup>₹</sup>999<sub>/mo</sub></div>
+        <div class="plan-sep"></div>
+        <ul class="plan-feats">
+          <li>Everything in Starter</li>
+          <li>Live webcam detection</li>
+          <li>CCTV / RTSP streams</li>
+          <li>Face recognition (DeepFace)</li>
+          <li>300 screenshots / month</li>
+          <li>Priority email support</li>
+        </ul>
+        <a href="/login" class="plan-btn" id="proBtn">Get Pro →</a>
+      </div>
+
+      <!-- Enterprise -->
+      <div class="plan-box">
+        <div class="plan-tier">Enterprise</div>
+        <div class="plan-title">Enterprise</div>
+        <div class="plan-amount"><sup>₹</sup>1,999<sub>/mo</sub></div>
+        <div class="plan-sep"></div>
+        <ul class="plan-feats">
+          <li>Everything in Pro</li>
+          <li>Unlimited screenshots</li>
+          <li>Multiple CCTV streams</li>
+          <li>API access</li>
+          <li>Dedicated support</li>
+          <li>Custom integrations</li>
+        </ul>
+        <a href="/login" class="plan-btn" id="entBtn">Get Enterprise →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="ctasec reveal">
+  <div class="ctaglow"></div>
+  <h2>Keep your<br/><span style="background:linear-gradient(120deg,var(--accent),#7af8da,var(--acc2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">eyes open.</span></h2>
+  <p>One Python file. No cloud. No limits.</p>
+  <div class="hero-ctas">
+    <a id="ctaPlayBtn" href="/login" class="btn-p">🎮 Try Playground Now</a>
+    <a href="#how" class="btn-s">How it works →</a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="fbrand">
+    <div class="logo"><div class="logo-mark" style="width:30px;height:30px;font-size:14px">👁</div><span class="logo-name" style="font-size:16px">Eye<span>Keeper</span></span></div>
+    <p>Zero-shot object detection for images and video. Type to detect — no training, no cloud, no limits.</p>
+  </div>
+  <div class="fcol"><h4>Product</h4><a href="/playground">Playground</a><a href="#how">How it works</a><a href="#prompts">Prompt examples</a><a href="#pricing">Pricing</a></div>
+  <div class="fcol"><h4>Runs on</h4><a href="#">Windows</a><a href="#">Linux / Mac</a><a href="#">Google Colab</a><a href="#">NVIDIA GPU</a></div>
+  <div class="fcol"><h4>Powered by</h4><a href="#">YOLO-World</a><a href="#">Ultralytics</a><a href="#">Sentence Transformers</a><a href="#">OpenCV</a></div>
+</footer>
+<div class="fbot">
+  <p>© 2025 EyeKeeper. All rights reserved.</p>
+  <p>Built with YOLO-World · sentence-transformers · OpenCV</p>
+</div>
+
+<script>
+// ── Custom cursor ────────────────────────────────────────────────
+const cur=document.getElementById('cur'),ring=document.getElementById('cur-ring');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY});
+(function loop(){cur.style.left=mx+'px';cur.style.top=my+'px';rx+=(mx-rx)*.12;ry+=(my-ry)*.12;ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(loop)})();
+document.querySelectorAll('a,button,.pcard,.pill,.vchip,.fcard,.step,.plan-box').forEach(el=>{
+  el.addEventListener('mouseenter',()=>{cur.style.width='16px';cur.style.height='16px';ring.style.width='48px';ring.style.height='48px'});
+  el.addEventListener('mouseleave',()=>{cur.style.width='8px';cur.style.height='8px';ring.style.width='32px';ring.style.height='32px'});
+});
+
+// ── Auth-aware playground links ───────────────────────────────────
+(function() {
+  const token = localStorage.getItem('ek_token');
+  const dest  = token ? '/playground' : '/login';
+  ['navPlayBtn','heroPlayBtn','ctaPlayBtn','starterBtn','proBtn','entBtn'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.href = dest;
+  });
+})();
+
+// ── Code tabs ────────────────────────────────────────────────────
+function stab(n,btn){
+  document.querySelectorAll('.ctab').forEach(t=>t.classList.remove('on'));
+  document.querySelectorAll('.cblock').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('ctab-'+n).classList.add('on');
+}
+
+// ── Demo chips ───────────────────────────────────────────────────
+const CC=['co','cg','cp','cb','ct'];
+const BC=['#ea580c','#16a34a','#db2777','#2563eb','#0891b2'];
+const BP=[{left:'25%',top:'48%',width:'8%',height:'26%'},{left:'60%',top:'44%',width:'9%',height:'29%'},{left:'70%',top:'55%',width:'7%',height:'20%'},{left:'10%',top:'58%',width:'6%',height:'18%'}];
+let ci=0,bi=0;
+
+function setPrompt(txt){
+  document.getElementById('livePrompt').value=txt;
+  document.querySelector('.demo-wrap').scrollIntoView({behavior:'smooth',block:'center'});
+  setTimeout(()=>document.getElementById('livePrompt').focus(),600);
+  sendLivePrompt();
+}
+
+function sendLivePrompt(){
+  const inp=document.getElementById('livePrompt'),v=inp.value.trim();
+  if(!v)return;
+  const ch=document.createElement('div');
+  ch.className='vchip '+CC[ci%CC.length];ch.textContent=v;ch.title='Click to remove';ch.onclick=()=>ch.remove();
+  document.getElementById('liveChips').appendChild(ch);
+  spawnBox(v);
+  inp.value='';ci++;inp.focus();
+}
+
+function spawnBox(label){
+  const p=BP[bi%BP.length],c=BC[bi%BC.length];bi++;
+  const box=document.createElement('div');box.className='dbox';
+  Object.assign(box.style,p);box.style.borderColor=c;
+  const lbl=document.createElement('div');lbl.className='dlbl';lbl.style.background=c;
+  lbl.textContent=label.length>14?label.slice(0,13)+'…':label;
+  box.appendChild(lbl);
+  document.getElementById('liveDetections').appendChild(box);
+  setTimeout(()=>box.remove(),4500);
+}
+
+document.getElementById('livePrompt').addEventListener('keydown',e=>{if(e.key==='Enter')sendLivePrompt()});
+function setDemo(txt){setPrompt(txt);}
+
+// ── Reveal on scroll ──────────────────────────────────────────────
+const obs=new IntersectionObserver(e=>e.forEach(x=>{if(x.isIntersecting)x.target.classList.add('visible')}),{threshold:.1});
+document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+
+// ── Live demo HUD updates ─────────────────────────────────────────
+setInterval(()=>{
+  const fps=Math.floor(Math.random()*15)+25;
+  document.getElementById('liveHUD').innerHTML=`FPS ${fps}<br>STATUS: DEMO<br>READY`;
+},2000);
+</script>
+</body>
+</html>

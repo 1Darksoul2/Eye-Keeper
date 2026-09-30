@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>EyeKeeper — Sign In</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:     #05080f;
+  --bg2:    #090d18;
+  --bg3:    #0f1626;
+  --border: rgba(255,255,255,.06);
+  --bord2:  rgba(255,255,255,.11);
+  --text:   #dde3f0;
+  --muted:  #5a6478;
+  --accent: #4af0c4;
+  --acc2:   #2563ff;
+  --danger: #ef4444;
+  --glow:   rgba(74,240,196,.12);
+  --fd:     'Syne', sans-serif;
+  --fb:     'DM Sans', sans-serif;
+  --fm:     'JetBrains Mono', monospace;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: var(--fb); font-weight: 300;
+  min-height: 100vh; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  overflow-x: hidden;
+}
+
+/* Background grid */
+.bg-grid {
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background-image:
+    linear-gradient(rgba(74,240,196,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(74,240,196,.025) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse 70% 70% at 50% 50%, black, transparent);
+  animation: gdrift 25s linear infinite;
+}
+@keyframes gdrift { to { background-position: 56px 56px; } }
+
+/* Glow orb */
+.bg-glow {
+  position: fixed; width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(74,240,196,.07) 0%, transparent 65%);
+  top: 50%; left: 50%; transform: translate(-50%,-52%);
+  pointer-events: none; z-index: 0;
+}
+
+/* Card */
+.card {
+  position: relative; z-index: 1;
+  width: 100%; max-width: 420px;
+  background: var(--bg2);
+  border: 1px solid var(--bord2);
+  border-radius: 18px;
+  padding: 40px 36px 36px;
+  box-shadow: 0 40px 100px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.04);
+  animation: fadeUp .5s ease both;
+}
+@keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+
+/* Logo */
+.logo {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 32px; text-decoration: none; color: var(--text);
+}
+.logo-mark {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--acc2));
+  display: grid; place-items: center; font-size: 18px; flex-shrink: 0;
+  box-shadow: 0 0 20px rgba(74,240,196,.3);
+}
+.logo-name { font-family: var(--fd); font-weight: 800; font-size: 20px; letter-spacing: -.5px; }
+.logo-name span { color: var(--accent); }
+
+/* Tab switcher */
+.tabs {
+  display: flex; gap: 3px; background: var(--bg);
+  border-radius: 9px; padding: 3px; margin-bottom: 28px;
+}
+.tab {
+  flex: 1; padding: 8px; border: none; background: transparent;
+  color: var(--muted); font-family: var(--fb); font-size: 14px; font-weight: 500;
+  border-radius: 7px; cursor: pointer; transition: all .15s;
+}
+.tab:hover { color: var(--text); }
+.tab.active { background: var(--bg3); color: var(--text); box-shadow: 0 1px 4px rgba(0,0,0,.4); }
+
+/* Form */
+.field { margin-bottom: 16px; }
+.field label {
+  display: block; font-family: var(--fm); font-size: 10px;
+  color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 7px;
+}
+.field input {
+  width: 100%; background: var(--bg);
+  border: 1px solid var(--bord2); border-radius: 9px;
+  padding: 11px 14px; color: var(--text);
+  font-family: var(--fb); font-size: 14px; outline: none;
+  transition: border-color .2s, box-shadow .2s;
+}
+.field input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(74,240,196,.1);
+}
+.field input::placeholder { color: var(--muted); opacity: .5; }
+
+/* Submit button */
+.submit-btn {
+  width: 100%; margin-top: 8px; padding: 12px;
+  background: var(--accent); color: #000;
+  font-family: var(--fb); font-size: 14px; font-weight: 700;
+  border: none; border-radius: 9px; cursor: pointer;
+  transition: all .2s; box-shadow: 0 0 24px rgba(74,240,196,.25);
+}
+.submit-btn:hover:not(:disabled) {
+  box-shadow: 0 0 44px rgba(74,240,196,.45); transform: translateY(-1px);
+}
+.submit-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+/* Error / success */
+.msg {
+  margin-top: 12px; padding: 10px 14px;
+  border-radius: 8px; font-size: 13px; font-family: var(--fm);
+  display: none;
+}
+.msg.error   { background: rgba(239,68,68,.1);  border: 1px solid rgba(239,68,68,.3);  color: #f87171; display: block; }
+.msg.success { background: rgba(74,240,196,.08); border: 1px solid rgba(74,240,196,.2); color: var(--accent); display: block; }
+
+/* Footer note */
+.footer-note {
+  margin-top: 20px; text-align: center;
+  font-size: 12px; font-family: var(--fm); color: var(--muted);
+}
+.footer-note a { color: var(--accent); text-decoration: none; }
+.footer-note a:hover { text-decoration: underline; }
+
+/* Loader spinner */
+.spin {
+  display: inline-block; width: 14px; height: 14px;
+  border: 2px solid rgba(0,0,0,.3); border-top-color: #000;
+  border-radius: 50%; animation: spin .6s linear infinite; vertical-align: middle; margin-right: 6px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Custom cursor */
+#cur      { position:fixed;width:8px;height:8px;background:var(--accent);border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);transition:width .18s,height .18s;mix-blend-mode:difference }
+#cur-ring { position:fixed;width:32px;height:32px;border:1px solid rgba(74,240,196,.4);border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:width .25s,height .25s }
+</style>
+</head>
+<body>
+<div id="cur"></div>
+<div id="cur-ring"></div>
+<div class="bg-grid"></div>
+<div class="bg-glow"></div>
+
+<div class="card">
+  <!-- Logo -->
+  <a href="/" class="logo">
+    <div class="logo-mark">👁</div>
+    <div class="logo-name">Eye<span>Keeper</span></div>
+  </a>
+
+  <!-- Tab switcher -->
+  <div class="tabs">
+    <button class="tab active" id="tabLogin"  onclick="switchTab('login')">Sign In</button>
+    <button class="tab"        id="tabSignup" onclick="switchTab('signup')">Create Account</button>
+  </div>
+
+  <!-- Login form -->
+  <div id="formLogin">
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="loginEmail" placeholder="you@example.com" autocomplete="email"/>
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password"/>
+    </div>
+    <button class="submit-btn" id="loginBtn" onclick="doLogin()">Sign In</button>
+    <div class="msg" id="loginMsg"></div>
+  </div>
+
+  <!-- Signup form -->
+  <div id="formSignup" style="display:none">
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="signupEmail" placeholder="you@example.com" autocomplete="email"/>
+    </div>
+    <div class="field">
+      <label>Password <span style="color:var(--muted);font-family:var(--fm);font-size:9px;letter-spacing:0;text-transform:none;">(min 6 chars)</span></label>
+      <input type="password" id="signupPass" placeholder="••••••••" autocomplete="new-password"/>
+    </div>
+    <div class="field">
+      <label>Confirm Password</label>
+      <input type="password" id="signupPass2" placeholder="••••••••" autocomplete="new-password"/>
+    </div>
+    <button class="submit-btn" id="signupBtn" onclick="doSignup()">Create Account</button>
+    <div class="msg" id="signupMsg"></div>
+  </div>
+
+  <div class="footer-note">
+    <a href="/">← Back to home</a>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+const API = 'http://localhost:8000';
+
+// ── Custom cursor ─────────────────────────────────────────────────
+const cur = document.getElementById('cur'), ring = document.getElementById('cur-ring');
+let mx = 0, my = 0, rx = 0, ry = 0;
+document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+(function loop() {
+  cur.style.left = mx + 'px'; cur.style.top = my + 'px';
+  rx += (mx - rx) * .12; ry += (my - ry) * .12;
+  ring.style.left = rx + 'px'; ring.style.top = ry + 'px';
+  requestAnimationFrame(loop);
+})();
+document.querySelectorAll('a, button, input').forEach(el => {
+  el.addEventListener('mouseenter', () => { cur.style.width = '16px'; cur.style.height = '16px'; ring.style.width = '48px'; ring.style.height = '48px'; });
+  el.addEventListener('mouseleave', () => { cur.style.width = '8px';  cur.style.height = '8px';  ring.style.width = '32px'; ring.style.height = '32px'; });
+});
+
+// ── If already logged in, redirect ───────────────────────────────
+if (localStorage.getItem('ek_token')) {
+  window.location.href = '/playground';
+}
+
+// ── Tab switching ─────────────────────────────────────────────────
+function switchTab(which) {
+  const isLogin = which === 'login';
+  document.getElementById('tabLogin').classList.toggle('active', isLogin);
+  document.getElementById('tabSignup').classList.toggle('active', !isLogin);
+  document.getElementById('formLogin').style.display  = isLogin ? '' : 'none';
+  document.getElementById('formSignup').style.display = isLogin ? 'none' : '';
+}
+
+// ── Helpers ───────────────────────────────────────────────────────
+function showMsg(id, type, text) {
+  const el = document.getElementById(id);
+  el.className = 'msg ' + type;
+  el.textContent = text;
+}
+function clearMsg(id) {
+  const el = document.getElementById(id);
+  el.className = 'msg';
+  el.textContent = '';
+}
+function setLoading(btnId, loading) {
+  const btn = document.getElementById(btnId);
+  if (loading) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spin"></span>Please wait…';
+  } else {
+    btn.disabled = false;
+    btn.innerHTML = btnId === 'loginBtn' ? 'Sign In' : 'Create Account';
+  }
+}
+
+// ── Login ──────────────────────────────────────────────────────────
+async function doLogin() {
+  clearMsg('loginMsg');
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass  = document.getElementById('loginPass').value;
+  if (!email || !pass) { showMsg('loginMsg', 'error', 'Please fill in all fields.'); return; }
+
+  setLoading('loginBtn', true);
+  try {
+    const r = await fetch(`${API}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: pass }),
+    });
+    const d = await r.json();
+    if (!r.ok) { showMsg('loginMsg', 'error', d.detail || 'Login failed'); return; }
+
+    localStorage.setItem('ek_token', d.token);
+    localStorage.setItem('ek_user',  JSON.stringify(d.user));
+    showMsg('loginMsg', 'success', '✓ Welcome back! Redirecting…');
+    setTimeout(() => window.location.href = '/playground', 700);
+  } catch (err) {
+    showMsg('loginMsg', 'error', 'Connection error — is the server running?');
+  } finally {
+    setLoading('loginBtn', false);
+  }
+}
+
+// ── Signup ────────────────────────────────────────────────────────
+async function doSignup() {
+  clearMsg('signupMsg');
+  const email = document.getElementById('signupEmail').value.trim();
+  const pass  = document.getElementById('signupPass').value;
+  const pass2 = document.getElementById('signupPass2').value;
+
+  if (!email || !pass) { showMsg('signupMsg', 'error', 'Please fill in all fields.'); return; }
+  if (pass.length < 6) { showMsg('signupMsg', 'error', 'Password must be at least 6 characters.'); return; }
+  if (pass !== pass2)  { showMsg('signupMsg', 'error', 'Passwords do not match.'); return; }
+
+  setLoading('signupBtn', true);
+  try {
+    const r = await fetch(`${API}/auth/signup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: pass }),
+    });
+    const d = await r.json();
+    if (!r.ok) { showMsg('signupMsg', 'error', d.detail || 'Signup failed'); return; }
+
+    localStorage.setItem('ek_token', d.token);
+    localStorage.setItem('ek_user',  JSON.stringify(d.user));
+    showMsg('signupMsg', 'success', '✓ Account created! Redirecting to playground…');
+    setTimeout(() => window.location.href = '/playground', 800);
+  } catch (err) {
+    showMsg('signupMsg', 'error', 'Connection error — is the server running?');
+  } finally {
+    setLoading('signupBtn', false);
+  }
+}
+
+// ── Enter key support ─────────────────────────────────────────────
+document.getElementById('loginPass').addEventListener('keydown',   e => { if (e.key === 'Enter') doLogin(); });
+document.getElementById('loginEmail').addEventListener('keydown',  e => { if (e.key === 'Enter') doLogin(); });
+document.getElementById('signupPass2').addEventListener('keydown', e => { if (e.key === 'Enter') doSignup(); });
+</script>
+</body>
+</html>
